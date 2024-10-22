@@ -1,0 +1,16 @@
+:root {
+  /* Colors */
+  --color-button: #318CE7;
+  --color-button-hover: #0056b3;
+  --color-button-border: #318CE7;
+  --color-button-text: white;
+  --color-modal-bg: aliceblue;
+
+
+  /* Fonts */
+  --font-robot: "Roboto";
+  --font-main-section: "rubik";
+  --font-button-text: "rubik";
+  --font-button-text-secondary: sans-serif;
+  --font-modal-text: "rubik";
+}
