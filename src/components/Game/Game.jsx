@@ -769,7 +769,7 @@ export const Game = () => {
     
     //Word Unscramble Question
     if (questionType == 1) {
-      if (inputAnswer.toLowerCase == wordToUnscramble.toLowerCase) {
+      if (inputAnswer.toLowerCase() == wordToUnscramble) {
         handleCorrect();
       }
       else {
