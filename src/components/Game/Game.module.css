@@ -488,6 +488,7 @@
     justify-content: space-between;
     border-bottom: 1px solid #dfdfdf;
     border-top: 1px solid #dfdfdf;
+    height: 50px;
   }
   
   .leftHeader {
@@ -562,7 +563,7 @@
   }
 
   .mainSection {
-    margin-top: 10px;
+    margin-top: 0px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -570,9 +571,10 @@
 
   .mainSectionText {
     font-family: var(--font-main-section);
-    font-size: 20px;
+    font-size: 19px;
     font-weight: bold;
     margin-top: 5px;
+    text-align: center;
   }
 
   @keyframes tada {
@@ -640,11 +642,12 @@
 
   .topSectionLeft {
     margin-left: 10px;
-    margin-top: 5px;
+    margin-top: 3px;
   }
   
   .topSectionLeftText {
-    margin-top: 6px;
+    margin-top: 0px;
+    margin-bottom: 6px;
     font-size: 18px;
     font-family: var(--font-main-section), var(--font-button-text-secondary);
     font-weight: bold;
@@ -654,11 +657,12 @@
     margin-right: 10px;
     display: flex;
     flex-direction: column;
-    margin-top: 5px;
+    margin-top: 3px;
   }
   
   .topSectionRightButton {
-    margin-top: 8px;
+    margin-top: 0px;
+    margin-bottom: 8px;
     border-radius: 10px;
     background-color: var(--color-button);
     width: 135px;

@@ -82,12 +82,16 @@ export const getWordToUnscramble = () => {
 
 export const generateWordUnscrambleQuestion = (word) => {
   const letters = word.split('');
-  for (let i = letters.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [letters[i], letters[j]] = [letters[j], letters[i]];
-  }
+  var scrambledWord = "";
+  do {
+    for (let i = letters.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [letters[i], letters[j]] = [letters[j], letters[i]];
+    }
+    scrambledWord = letters.join('')
+  } while (scrambledWord == word);
 
-  return letters.join('');
+  return scrambledWord;
 }
 
 
@@ -156,4 +160,187 @@ function getRandomInt(max) {
 }
 
 const wordUnscrambleArray =
-["audio", "brick", "plant", "plumb", "vouch", "knelt", "banjo", "crumb"];
+[
+  //Start - 0
+  'audio', 'brick', 'plant', 'plumb', 'vouch', 'knelt',
+  'banjo', 'crumb', 'blaze', 'grape', 'joint', 'charm',
+  'pride', 'truce', 'flint', 'crisp', 'swoop', 'fable',
+  'gloat', 'mirth', 'pearl', 'trend', 'whale', 'glint',
+  'swirl', 'champ', 'frown', 'daisy', 'grief', 'flair',
+  'sheep', 'pluck', 'quilt', 'brisk', 'grind', 'smirk',
+  'scorn', 'spine', 'clash', 'globe', 'frail', 'haste',
+  'blunt', 'sting', 'trail', 'swamp', 'bride', 'plush',
+  'drill', 'fraud', 'creep', 'scope', 'flock', 'glide',
+  'shrug', 'crown', 'grant', 'crank', 'steep', 'flare',
+  'thump', 'brave', 'glove', 'crush', 'wince', 'grove',
+  'trace', 'bloom', 'flute', 'plume', 'stark', 'stomp',
+  'grasp', 'quill', 'snarl', 'tread', 'gleam', 'feast',
+  'throb', 'drift', 'brink', 'clown', 'smash', 'pouch',
+  'chess', 'flake', 'bliss', 'grill', 'clasp', 'prong',
+  'twist', 'slate', 'whiff', 'flick', 'churn', 'sloth',
+  'brawl', 'creek', 'blast', 'scout',
+
+  //100
+  'glare', 'brood', 'scamp', 'grate', 'prick', 'blush',
+  'grope', 'bloat', 'freak', 'shank', 'blare', 'spree',
+  'flask', 'broil', 'shave', 'fluff', 'spear', 'crawl',
+  'scrub', 'thrum', 'gloom', 'spike', 'swill', 'shrub',
+  'shove', 'prone', 'shone', 'scuff', 'shade', 'scold',
+  'swell', 'spoke', 'flirt', 'brass', 'flank', 'scrum',
+  'click', 'crook', 'creak', 'choke', 'groin', 'flash',
+  'gripe', 'shard', 'slice', 'blitz', 'snout', 'trunk',
+  'slick', 'abhor', 'acrid', 'algae', 'amuse', 'angst',
+  'apron', 'basil', 'belch', 'beret', 'bleak', 'board',
+  'bogus', 'booth', 'bribe', 'brush', 'budge', 'bulky',
+  'bumpy', 'cabin', 'cargo', 'carve', 'chant', 'cloud',
+  'cluck', 'clump', 'coast', 'cobra', 'comet', 'crone',
+  'crude', 'curly', 'curvy', 'cycle', 'debit', 'demon',
+  'dizzy', 'drone', 'dumpy', 'duvet', 'eager', 'elbow',
+  'elope', 'elude', 'envoy', 'facet', 'fetch', 'fetus',
+  'fiend', 'flora', 'forge', 'freed',
+
+  //200
+  'fudge', 'fussy', 'gland', 'gnarl', 'groom', 'haiku',
+  'haven', 'hinge', 'hoist', 'hound', 'hunky', 'hutch',
+  'ivory', 'jaded', 'jeans', 'jolly', 'jumpy', 'karma',
+  'kayak', 'knead', 'lager', 'lapse', 'lathe', 'latch',
+  'livid', 'lumpy', 'lurch', 'lurid', 'madly', 'maize',
+  'manor', 'marsh', 'medic', 'melee', 'merit', 'mince',
+  'mocha', 'moist', 'molar', 'mourn', 'mucky', 'nerve',
+  'nifty', 'nudge', 'odder', 'oddly', 'orbit', 'paddy',
+  'paler', 'palsy', 'panic', 'pansy', 'parka', 'pecan',
+  'pedal', 'penal', 'perch', 'peril', 'pesky', 'petal',
+  'poise', 'probe', 'proxy', 'puffy', 'pupil', 'quack',
+  'quail', 'quart', 'quest', 'quota', 'rabid', 'ranch',
+  'raven', 'risky', 'roast', 'rogue', 'rowdy', 'ruddy',
+  'ruler', 'runic', 'rusty', 'sable', 'scent', 'sever',
+  'shear', 'shire', 'silky', 'sinus', 'skimp', 'slump',
+  'smack', 'soapy', 'spade', 'spasm', 'spite', 'spool',
+  'spurn', 'squat', 'stale', 'stork',
+
+  //300
+  'stout', 'straw', 'strip', 'stung', 'tacit', 'tacky',
+  'tally', 'taper', 'tardy', 'tasty', 'taunt', 'tenth',
+  'thorn', 'tidal', 'torch', 'trove', 'tulip', 'tunic',
+  'ulcer', 'unzip', 'vague', 'vapid', 'vault', 'vivid',
+  'vocal', 'vomit', 'wafer', 'wager', 'waive', 'waltz',
+  'weave', 'whack', 'whirl', 'woody', 'wring', 'wrist',
+  'wrote', 'yacht', 'yearn', 'yeast', 'zonal', 'adapt',
+  'afire', 'agree', 'amber', 'angel', 'apple', 'badge',
+  'baker', 'beach', 'beard', 'beast', 'boast', 'bored',
+  'brace', 'bread', 'brunt', 'cable', 'candy', 'crate',
+  'dread', 'dress', 'druid', 'eagle', 'equal', 'fresh',
+  'grave', 'greet', 'habit', 'hatch', 'hiker', 'honor',
+  'lemon', 'loose', 'mango', 'march', 'mould', 'naive',
+  'naval', 'nerdy', 'newly', 'ocean', 'opine', 'other',
+  'piano', 'realm', 'salty', 'sheer', 'sight', 'sneak',
+  'snowy', 'speak', 'spice', 'stain', 'steed', 'stone',
+  'study', 'style', 'table', 'tiger',
+
+  //400
+  'tired',  'tooth', 'truly', 'upset',  'venue', 'vigor',
+  'waste',  'weary', 'wheel', 'widen',  'wiser', 'worth',
+  'zesty',  'abbey', 'abode', 'actor',  'admit', 'aider',
+  'altar',  'aroma', 'asset', 'avenue', 'bingo', 'bongo',
+  'cider',  'cliff', 'cocoa', 'coral',  'dairy', 'dally',
+  'dugout', 'eerie', 'elder', 'empty',  'enjoy', 'exile',
+  'fairy',  'fancy', 'fifty', 'flour',  'folds', 'guile',
+  'happy',  'heron', 'hover', 'imply',  'index', 'inert',
+  'input',  'islet', 'judge', 'kneel',  'knock', 'laser',
+  'leash',  'luxur', 'melon', 'miser',  'motor', 'needy',
+  'opium',  'polar', 'punch', 'ratty',  'reset', 'rifle',
+  'robin',  'rumor', 'salad', 'score',  'seize', 'shine',
+  'shout',  'skirt', 'skull', 'smart',  'sober', 'sonar',
+  'swoon',  'ultra', 'voter', 'xenon',  'yummy', 'zebra',
+  'climb',  'doubt', 'frost', 'knife',  'lunch', 'magic',
+  'queen',  'umbra', 'bacon', 'early',  'ideal', 'jewel',
+  'night',  'quark', 'rebel', 'uncle',
+
+  //500
+  'yield', 'crane',  'dodge', 'haunt', 'koala', 'merry',
+  'noble', 'river',  'timer', 'usher', 'vowel', 'watch',
+  'young', 'dance',  'harsh', 'knack', 'novel', 'plaza',
+  'resin', 'tough',  'zippy', 'abyss', 'brawn', 'flame',
+  'glean', 'inbox',  'midge', 'octal', 'pinky', 'rally',
+  'witty', 'zealot', 'brine', 'cower', 'douse', 'ether',
+  'hasty', 'kinky',  'lunar', 'media', 'rugby', 'tweed',
+  'unite', 'wrath',  'xeric', 'alert', 'binge', 'ducky',
+  'fifth', 'horny',  'light', 'niche', 'raise', 'tramp',
+  'usual', 'whine',  'axial', 'event', 'fuzzy', 'infer',
+  'paved', 'quash',  'reach', 'tenor', 'wedge', 'xylem',
+  'yodel', 'drama',  'fence', 'humor', 'mouse', 'onion',
+  'plaid', 'quirk',  'trout', 'clamp', 'drain', 'flush',
+  'heart', 'inlet',  'union', 'wider', 'blend', 'frank',
+  'moose', 'olive',  'sugar', 'wheat', 'arise', 'clean',
+  'email', 'knoll',  'local', 'money', 'ridge', 'swing',
+  'tweak', 'upper',  'askew', 'bluff',
+
+  //600
+  'crash', 'defer', 'frill', 'glaze', 'herbs', 'savor',
+  'tease', 'upend', 'voice', 'above', 'brief', 'chill',
+  'entry', 'human', 'minow', 'slant', 'dream', 'inner',
+  'racer', 'honey', 'radar', 'trump', 'aback', 'abate',
+  'abort', 'ached', 'acorn', 'adore', 'aegis', 'aging',
+  'aimed', 'alien', 'alive', 'anger', 'aorta', 'ashen',
+  'asked', 'atone', 'bambo', 'beeps', 'bison', 'blame',
+  'block', 'booze', 'bound', 'broom', 'buyer', 'cadet',
+  'camel', 'canal', 'cheer', 'chore', 'cling', 'clove',
+  'debut', 'devil', 'ditch', 'dwell', 'embed', 'equip',
+  'error', 'essay', 'exist', 'fiber', 'flood', 'focal',
+  'froze', 'gloss', 'grump', 'handy', 'hiked', 'hoard',
+  'house', 'imbed', 'image', 'irony', 'kiosk', 'knots',
+  'later', 'level', 'loyal', 'lucky', 'nasty', 'neuro',
+  'noise', 'nurse', 'occur', 'offal', 'outgo', 'pasta',
+  'poppy', 'ratio', 'robot', 'scone', 'shiny', 'skate',
+  'snide', 'spiny', 'swept', 'tamer',
+
+  //700
+  'taste', 'teeth', 'tempo', 'topic', 'trust',  'udder',
+  'urban', 'vapor', 'wacky', 'whisk', 'youth',  'aloof',
+  'aside', 'caddy', 'clerk', 'clout', 'dandy',  'dough',
+  'faint', 'hitch', 'homer', 'idled', 'irrit',  'lofty',
+  'octet', 'reign', 'sandy', 'slang', 'smile',  'snoop',
+  'tried', 'tubed', 'waist', 'water', 'weigh',  'brown',
+  'enact', 'gleef', 'jumps', 'medal', 'offset', 'revel',
+  'trial', 'blimp', 'gamer', 'grace', 'kites',  'leafy',
+  'louse', 'meaty', 'meets', 'movie', 'pasty',  'query',
+  'shirt', 'storm', 'train', 'wield', 'world',  'abuse',
+  'adult', 'agent', 'alone', 'angle', 'armor',  'belly',
+  'blank', 'brain', 'broad', 'catch', 'chair',  'chest',
+  'clear', 'crack', 'diner', 'disco', 'enter',  'evoke',
+  'found', 'frame', 'glory', 'grain', 'idios',  'meant',
+  'plate', 'quote', 'saber', 'shale', 'sleek',  'slosh',
+  'sniff', 'space', 'verse', 'wound', 'bland',  'brute',
+  'caste', 'clock', 'darts', 'dense',
+
+  //800
+  'diary',  'drape',  'farce', 'fever', 'laugh',  'mercy',
+  'peace',  'sheen',  'shore', 'sooth', 'stoic',  'track',
+  'twine',  'venom',  'drawl', 'first', 'forty',  'goose',
+  'guide',  'huey',   'juice', 'mimic', 'model',  'plane',
+  'proud',  'resort', 'scene', 'scoff', 'tango',  'unity',
+  'waver',  'ablys',  'adobe', 'after', 'agile',  'alarm',
+  'apply',  'array',  'arrow', 'aster', 'augur',  'beaux',
+  'briar',  'broth',  'bunch', 'caper', 'cause',  'cedar',
+  'cobalt', 'comic',  'depth', 'draft', 'everg',  'flesh',
+  'float',  'focus',  'gully', 'hefty', 'hobby',  'horse',
+  'liver',  'moral',  'obese', 'pacer', 'quiet',  'radio',
+  'refine', 'rigor',  'silly', 'siren', 'snare',  'spout',
+  'squid',  'tabby',  'total', 'white', 'write',  'blues',
+  'bunny',  'chase',  'cross', 'daunt', 'delta',  'droid',
+  'earth',  'froth',  'maple', 'music', 'sound',  'store',
+  'sunny',  'arcus',  'bleat', 'denim', 'docile', 'fruit',
+  'guest',  'kudos',  'motif', 'roost',
+
+  //900
+  'scale',  'solar', 'tempy',
+  'twirl',  'verge', 'aloud',
+  'airly',  'balmy', 'break',
+  'bring',  'cagey', 'echoe',
+  'elect',  'henry', 'holly',
+  'icier',  'loony', 'moldy',
+  'muggy',  'nappe', 'overt',
+  'rainy',  'razor', 'skunk',
+  'storky', 'tower', 'twice',
+  'verve'
+];

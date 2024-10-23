@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { getImageUrl } from "../../utils";
 import { RULE_TEXT1, RULE_TEXT2, PAYPAL_TEXT } from "../../text/Information";
 import db, { auth } from "../../firebase/firebase";
-import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail} from "firebase/auth";
+import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged} from "firebase/auth";
 import { doc, setDoc, getDoc, collection, addDoc, getDocs } from "firebase/firestore";
 import { format, toZonedTime } from 'date-fns-tz';
 import { generateMathQuestion, generateWordUnscrambleQuestion, getWordToUnscramble, generateMathSequenceQuestion } from "../../helpers/QuestionHelper";
@@ -26,7 +26,7 @@ export const Game = () => {
   const [password, setPassword] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
-  const [registerConfirmPassword, setRegisterComfirmPassword] = useState('');
+  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [signedIn, setSignedIn] = useState(false);
   const [userId, setUserId] = useState('');
@@ -38,6 +38,10 @@ export const Game = () => {
     return savedMessageArray ? JSON.parse(savedMessageArray) : [];
   })
   const [alertMessage, setAlertMessage] = useState('');
+
+  //Dates
+  const [todayString, setTodayString] = useState('');
+  const [todayFriendly, setTodayFriendly] = useState('');
 
   //Game Data
   const [total, setTotal] = useState(0);
@@ -51,7 +55,6 @@ export const Game = () => {
     return savedScore ? JSON.parse(savedScore) : 0;
   })
   const [balance, setBalance] = useState(0);
-  const [todayString, setTodayString] = useState(0);
   const [payout, setPayout] = useState(0);
   const [questionType, setQuestionType] = useState(() => {
     const savedQuestionType = localStorage.getItem("questionType");
@@ -96,6 +99,95 @@ export const Game = () => {
   const inputRef = useRef(null);
 
   //Use Effects
+
+  //Native Ad
+  useEffect(() => {
+    // Create and append the native ad script
+    const script = document.createElement('script');
+    script.async = true;
+    script['data-cfasync'] = 'false';
+    script.src = '//pl24785939.profitablecpmrate.com/10df8c323657c0a9077217509b4857c3/invoke.js';
+
+    const adDiv = document.createElement('div');
+    adDiv.id = 'container-10df8c323657c0a9077217509b4857c3';
+
+    const footer = document.querySelector('footer'); // Select the footer element
+    footer.parentNode.insertBefore(adDiv, footer);   // Insert adDiv above the footer
+    footer.parentNode.insertBefore(script, adDiv);   // Insert script just before the adDiv
+
+    // Clean up the ad script when the component unmounts
+    return () => {
+      footer.parentNode.removeChild(adDiv);
+      footer.parentNode.removeChild(script);
+    };
+  }, []); // Run once on component mount
+
+  //Banner Ad
+  useEffect(() => {
+    // Detect screen size and load the appropriate ad script
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  
+    const bannerDiv = document.createElement('div'); // Create a div to hold the banner ad
+    bannerDiv.style.textAlign = 'center'; // Center the ad
+    bannerDiv.style.marginTop = '5px'; // Add margin on top
+
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+  
+    if (isMobile) {
+      // Mobile ad options
+      script.innerHTML = `
+        atOptions = {
+          'key' : '75174f627f857d2c52bd3f6fb3c939b2',
+          'format' : 'iframe',
+          'height' : 50,
+          'width' : 320,
+          'params' : {}
+        };
+      `;
+      const srcScript = document.createElement('script');
+      srcScript.type = 'text/javascript';
+      srcScript.src = "//www.highperformanceformat.com/75174f627f857d2c52bd3f6fb3c939b2/invoke.js";
+      bannerDiv.appendChild(script);
+      bannerDiv.appendChild(srcScript);
+    } else {
+      // Desktop ad options
+      script.innerHTML = `
+        atOptions = {
+          'key' : 'b519149682772d21846a7f1961eb39b9',
+          'format' : 'iframe',
+          'height' : 90,
+          'width' : 728,
+          'params' : {}
+        };
+      `;
+      const srcScript = document.createElement('script');
+      srcScript.type = 'text/javascript';
+      srcScript.src = "//www.highperformanceformat.com/b519149682772d21846a7f1961eb39b9/invoke.js";
+      bannerDiv.appendChild(script);
+      bannerDiv.appendChild(srcScript);
+    }
+  
+    const header = document.querySelector('header'); // Select the header element
+    header.parentNode.insertBefore(bannerDiv, header); // Insert the bannerDiv before the header
+  
+    // Clean up the scripts when the component unmounts
+    return () => {
+      if (bannerDiv && bannerDiv.parentNode) {
+        bannerDiv.parentNode.removeChild(bannerDiv);
+      }
+    };
+  }, []); // Run only once on mount
+  
+
+  /*useEffect(() => {
+    const script = document.createElement('script');
+    script.async = true;
+    script.setAttribute('data-cfasync', 'false');
+    script.src = '//pl24785939.profitablecpmrate.com/10df8c323657c0a9077217509b4857c3/invoke.js';
+    document.body.appendChild(script);
+  }, []); */
+
   useEffect(() => {
     localStorage.setItem("messageArray", JSON.stringify(messageArray));
   }, [messageArray]);
@@ -132,13 +224,162 @@ export const Game = () => {
     localStorage.setItem("question", JSON.stringify(question));
   }, [question]);
 
+
+  //Main useEffect
   useEffect(() => {
+
+    // Firebase listener to check if a user is logged in
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, get their UID
+        setSignedIn(true);
+        setUserId(user.uid);
+
+        // Load user-specific data
+        loadUserData(user.uid);
+      } else {
+        // User is signed out
+        setSignedIn(false);
+        setUserId(null);
+      }
+    });
+
+    // Clean up the listener on component unmount
+    return () => unsubscribe();
+  }, []);
+
+  const loadUserData = async (uid) => {
+    const timeZone = 'America/Chicago';
+    const now = new Date();
+    const centralTime = toZonedTime(now, timeZone);
+    const formattedDate = format(centralTime, 'yyyy MM dd');
+    setTodayString(formattedDate);
+    const formattedDate2 = format(centralTime, 'MMM dd');
+    setTodayFriendly(formattedDate2);
+
+    // Load question
+    if (!question) {
+      setQuestion(generateQuestion());
+    }
+
+    // Load Payout, Leader total, and overall total
+    getGameStats(formattedDate);
+
+    // If the user total isn't saved to local storage, get it from the database
+    if (!userTotal) {
+      const userDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setUserTotal(data.userTotal);
+      } else {
+        setUserTotal(0);
+      }
+    }
+
+    // Load messages from the database
+    if (messageArray.length === 0) {
+      const messageArrayLocal = [];
+      const messagesRef = collection(db, 'users/' + uid + '/messages');
+      const dateSnapshots = await getDocs(messagesRef);
+      dateSnapshots.forEach((dateDoc) => {
+        const messageData = dateDoc.data();
+        if (messageData.lotteryMessage) {
+          messageArrayLocal.push(messageData.lotteryMessage);
+        }
+        if (messageData.highScoreMessage) {
+          messageArrayLocal.push(messageData.highScoreMessage);
+        }
+        if (messageData.transferBalanceMessage) {
+          messageArrayLocal.push(messageData.transferBalanceMessage);
+        }
+      });
+      setMessageArray(messageArrayLocal);
+    }
+
+    // Load user balance
+    const balanceDocRef = doc(db, 'users', uid);
+    const balanceDocSnap = await getDoc(balanceDocRef);
+    if (balanceDocSnap.exists()) {
+      const balanceData = balanceDocSnap.data();
+      setBalance(balanceData.highScoreBalance + balanceData.lotteryBalance);
+    }
+  };
+
+  /*useEffect(() => {
+    const loadUserData = async () => {
+      // Get today's date in central time
+      const timeZone = 'America/Chicago';
+      const now = new Date();
+      const centralTime = toZonedTime(now, timeZone);
+      const formattedDate = format(centralTime, 'yyyy MM dd');
+      setTodayString(formattedDate);
+      const formattedDate2 = format(centralTime, 'MMM dd');
+      setTodayFriendly(formattedDate2);
+  
+      // Load question
+      if (!question) {
+        setQuestion(generateQuestion());
+      }
+  
+      // Load Payout, Leader total, and overall total
+      getGameStats(formattedDate);
+  
+      // Load user if signed in
+      const storedToken = localStorage.getItem("userToken");
+  
+      if (storedToken) {
+        setSignedIn(true);
+  
+        try {
+          const decodedToken = await getAuth().verifyIdToken(storedToken);
+          const uid = decodedToken.uid;
+          setUserId(uid);
+  
+          // Fetch user total, messages, and balance
+          if (!userTotal) {
+            const userDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
+            const docSnap = await getDoc(userDocRef);
+            setUserTotal(docSnap.exists() ? docSnap.data().userTotal : 0);
+          }
+  
+          if (messageArray.length === 0) {
+            const messageArrayLocal = [];
+            const messagesRef = collection(db, 'users/' + uid + '/messages');
+            const dateSnapshots = await getDocs(messagesRef);
+            dateSnapshots.forEach((dateDoc) => {
+              const messageData = dateDoc.data();
+              if (messageData.lotteryMessage) messageArrayLocal.push(messageData.lotteryMessage);
+              if (messageData.highScoreMessage) messageArrayLocal.push(messageData.highScoreMessage);
+              if (messageData.transferBalanceMessage) messageArrayLocal.push(messageData.transferBalanceMessage);
+            });
+            setMessageArray(messageArrayLocal);
+          }
+  
+          const balanceDocRef = doc(db, 'users', uid);
+          const balanceDocSnap = await getDoc(balanceDocRef);
+          setBalance(balanceDocSnap.data().highScoreBalance + balanceDocSnap.data().lotteryBalance);
+        } catch (error) {
+          console.error("Error verifying token or loading user data:", error);
+          setAlertMessage("Failed to load user data. Please try again. Error: " + error);
+          setAlertModalVisible(true);
+        }
+      }
+    };
+  
+    // Call the helper function
+    loadUserData();
+  }, []);  */
+  
+  /*useEffect(() => {
     //Get today's date, in central time
     const timeZone = 'America/Chicago';
     const now = new Date();
     const centralTime = toZonedTime(now, timeZone);
     const formattedDate = format(centralTime, 'yyyy MM dd');
     setTodayString(formattedDate);
+    const formattedDate2 = format(centralTime, 'MMM dd')
+    setTodayFriendly(formattedDate2);
 
     //Load question
     if (!question) {
@@ -149,57 +390,62 @@ export const Game = () => {
     getGameStats(formattedDate);
 
     //Load user if signed in
-    const storedUser = localStorage.getItem("currentUser");
+    const storedToken = localStorage.getItem("token");
     
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
+    if (storedToken) {
+      setSignedIn(true);
 
-      if (parsedUser.loggedIn) {
-        setSignedIn(true);
-        setUserId(parsedUser.username);
-        // If the user total isn't saved to local storage, get it from the database
-        if (!userTotal) {
-          var userDocRef = doc(db, 'dates/' + formattedDate + '/users', parsedUser.username);
-          getDoc(userDocRef).then(docSnap => {
-            if (docSnap.exists()) {
-              var data = docSnap.data();
-              setUserTotal(data.userTotal);
-            }
-            else {
-              setUserTotal(0);
-            }
-          })
-        }
-        // If the messageArray isn't saved to local storage, get it from the database
-        if (messageArray.length == 0) {
-          var messageArrayLocal = [];
-          const messagesRef = collection(db, 'users/' + parsedUser.username + '/messages');
-          getDocs(messagesRef).then(dateSnapshots => {
-            for (const dateDoc of dateSnapshots.docs) {
-              const messageData = dateDoc.data();
-              if (messageData.lotteryMessage) {
-                messageArrayLocal.push(messageData.lotteryMessage);
-              }
-              if (messageData.highScoreMessage) {
-                messageArrayLocal.push(messageData.highScoreMessage);
-              }
-              if (messageData.transferBalanceMessage) {
-                messageArrayLocal.push(messageData.transferBalanceMessage);
-              }
-            }
-            setMessageArray(messageArrayLocal);
-          })
-        }
+      var uid;
+      getAuth()
+        .verify(storedToken)
+        .then((decodedToken) => {
+          uid = decodedToken.uid
+      });
 
-        // User Balance
-        var balanceDocRef = doc(db, 'users', parsedUser.username);
-        getDoc(balanceDocRef).then(docSnap => {
-          var data = docSnap.data();
-          setBalance(data.highScoreBalance + data.lotteryBalance);
+      setUserId(uid);
+      
+      // If the user total isn't saved to local storage, get it from the database
+      if (!userTotal) {
+        var userDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
+        getDoc(userDocRef).then(docSnap => {
+          if (docSnap.exists()) {
+            var data = docSnap.data();
+            setUserTotal(data.userTotal);
+          }
+          else {
+            setUserTotal(0);
+          }
         })
       }
+      // If the messageArray isn't saved to local storage, get it from the database
+      if (messageArray.length == 0) {
+        var messageArrayLocal = [];
+        const messagesRef = collection(db, 'users/' + uid + '/messages');
+        getDocs(messagesRef).then(dateSnapshots => {
+          for (const dateDoc of dateSnapshots.docs) {
+            const messageData = dateDoc.data();
+            if (messageData.lotteryMessage) {
+              messageArrayLocal.push(messageData.lotteryMessage);
+            }
+            if (messageData.highScoreMessage) {
+              messageArrayLocal.push(messageData.highScoreMessage);
+            }
+            if (messageData.transferBalanceMessage) {
+              messageArrayLocal.push(messageData.transferBalanceMessage);
+            }
+          }
+          setMessageArray(messageArrayLocal);
+        })
+      }
+
+      // User Balance
+      var balanceDocRef = doc(db, 'users', uid);
+      getDoc(balanceDocRef).then(docSnap => {
+        var data = docSnap.data();
+        setBalance(data.highScoreBalance + data.lotteryBalance);
+      })
     }
-  }, [])
+  }, []) */
 
   
   //Close Modals
@@ -221,6 +467,22 @@ export const Game = () => {
 
   const closeContactUsModal = () => {
     setContactUsModalVisible(false);
+  }
+
+  //Message Modal
+  const messageModalClicked = () => {
+    const timeZone = 'America/Chicago';
+    const now = new Date();
+    const centralTime = toZonedTime(now, timeZone);
+    const formattedDate = format(centralTime, 'yyyy MM dd');
+    const formattedDate2 = format(centralTime, 'MMM dd');
+
+    if (todayString != formattedDate) {
+      handleCutover(formattedDate, formattedDate2);
+    }
+    
+    setMessageModalVisible(true);
+  
   }
 
   //Transfer Balance
@@ -263,7 +525,19 @@ export const Game = () => {
       return;
     }
 
-    addDoc(collection(db, 'requests/' + todayString + '/' + userId),  {
+    const timeZone = 'America/Chicago';
+    const now = new Date();
+    const centralTime = toZonedTime(now, timeZone);
+    const formattedDate = format(centralTime, 'yyyy MM dd');
+    const formattedDate2 = format(centralTime, 'MMM dd');
+    const formattedDate3 = format(centralTime, 'MMM dd yyyy');
+
+    if (todayString != formattedDate) {
+      handleCutover(formattedDate, formattedDate2);
+    }
+
+
+    addDoc(collection(db, 'requests/' + formattedDate + '/' + userId),  {
       paypalEmail: payPalEmail,
       email: email,
       balance: balance,
@@ -277,19 +551,13 @@ export const Game = () => {
     }, {merge: true});
 
     //Add message
-    const timeZone = 'America/Chicago';
-    const now = new Date();
-    const centralTime = toZonedTime(now, timeZone);
-    const formattedDate = format(centralTime, 'MMM dd yyyy');
-    const formattedDate2 = format(centralTime, 'yyyy MM dd');
-
-    var transferBalanceMessage = formattedDate + ": You requested a payout of $" + balance + "."
+    var transferBalanceMessage = formattedDate3 + ": You requested a payout of $" + balance + "."
     var tempMessageArray = messageArray;
     tempMessageArray.push(transferBalanceMessage);
     setMessageArray(tempMessageArray);
     setBalance(0);
 
-    var docRef = doc(db, 'users/' + userId + "/messages/" + formattedDate2);
+    var docRef = doc(db, 'users/' + userId + "/messages/" + formattedDate);
     setDoc(docRef, {
       transferBalanceMessage: transferBalanceMessage
     }, {merge: true});
@@ -333,7 +601,17 @@ export const Game = () => {
       return;
     }
 
-    addDoc(collection(db, 'feedback/' + todayString + '/' + userId), {
+    const timeZone = 'America/Chicago';
+    const now = new Date();
+    const centralTime = toZonedTime(now, timeZone);
+    const formattedDate = format(centralTime, 'yyyy MM dd');
+    const formattedDate2 = format(centralTime, 'MMM dd');
+
+    if (todayString != formattedDate) {
+      handleCutover(formattedDate, formattedDate2);
+    }
+
+    addDoc(collection(db, 'feedback/' + formattedDate + '/' + userId), {
       subject: subject,
       message: message,
       userId: userId,
@@ -359,8 +637,10 @@ export const Game = () => {
     const now = new Date();
     const centralTime = toZonedTime(now, timeZone);
     const formattedDate = format(centralTime, 'yyyy MM dd');
+    const formattedDate2 = format(centralTime, 'MMM dd')
+    
     if (todayString != formattedDate) {
-      handleCutover();
+      handleCutover(formattedDate, formattedDate2);
       inputRef.current.focus();
       return;
     }
@@ -401,7 +681,7 @@ export const Game = () => {
   //Math Functions
   function generateQuestion() {
     var retVal = ''; 
-    var questionTypeLocal = getRandomInt(3);
+    var questionTypeLocal = getRandomInt(2);
     setQuestionType(questionTypeLocal);
 
     switch (questionTypeLocal) {
@@ -468,9 +748,10 @@ export const Game = () => {
     const now = new Date();
     const centralTime = toZonedTime(now, timeZone);
     const formattedDate = format(centralTime, 'yyyy MM dd');
+    const formattedDate2 = format(centralTime, 'MMM dd');
 
     if (todayString != formattedDate) {
-      handleCutover(formattedDate);
+      handleCutover(formattedDate, formattedDate2);
     }
 
     //Math Question
@@ -496,7 +777,7 @@ export const Game = () => {
       }
     }
 
-    //Word Unscramble Question
+    /*Word Unscramble Question -skip these sequence questions
     if (questionType == 2) {
       if (inputAnswer == sequenceAnswer) {
         handleCorrect();
@@ -504,13 +785,13 @@ export const Game = () => {
       else {
         handleIncorrect();
       }
-    }
+    } */
 
     //Auto-focus on input field
     inputRef.current.focus();
   }
 
-  const handleCutover = (dateString) => {
+  const handleCutover = (dateString, dateFriendly, skipUserData) => {
     setAlertMessage("A new day has started");
     setAlertModalVisible(true);
     setUserTotal(0);
@@ -523,6 +804,7 @@ export const Game = () => {
         setLeaderTotal(data.highScore);
         setTotal(data.total);
         setTodayString(dateString);
+        setTodayFriendly(dateFriendly);
       }
       else {
         setAlertMessage("Cutover to new day has not completed. Please wait a few moments and try again.");
@@ -530,6 +812,9 @@ export const Game = () => {
       }
     })
 
+    if (skipUserData) {
+      return;
+    }
     var balanceDocRef = doc(db, 'users', userId);
     getDoc(balanceDocRef).then(docSnap => {
       var data = docSnap.data();
@@ -578,7 +863,176 @@ export const Game = () => {
   }
 
   //Authentication Functions
-  const handleLogIn = () => {
+
+  const handleLogIn = async () => {
+    try {
+      if (!navigator.onLine) {
+        setAlertMessage("You are offline. Please check your connection");
+        setAlertModalVisible(true);
+        return;
+      }
+      if (!email) {
+        setAlertMessage("Please enter a valid email");
+        setAlertModalVisible(true);
+        return;
+      }
+      if (!password) {
+        setAlertMessage("Please enter a password");
+        setAlertModalVisible(true);
+        return;
+      }
+  
+      // Use async/await for sign-in
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      setUserId(user.uid);
+      setSignInModalVisible(false);
+      
+      setSignedIn(true);
+      setPassword('');
+  
+      // Refresh game stats
+      const timeZone = 'America/Chicago';
+      const now = new Date();
+      const centralTime = toZonedTime(now, timeZone);
+      const formattedDate = format(centralTime, 'yyyy MM dd');
+      const formattedDate2 = format(centralTime, 'MMM dd');
+      setTodayString(formattedDate);
+      setTodayFriendly(formattedDate2);
+  
+      getGameStats(formattedDate); // Await the async call
+  
+      // User Score
+      const userDocRef = doc(db, 'dates/' + formattedDate + '/users', user.uid);
+      const userDocSnap = await getDoc(userDocRef); // Await Firestore call
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
+        setUserTotal(data.userTotal);
+      } else {
+        setUserTotal(0);
+      }
+  
+      // User Balance
+      const balanceDocRef = doc(db, 'users', user.uid);
+      const balanceDocSnap = await getDoc(balanceDocRef); // Await Firestore call
+      const balanceData = balanceDocSnap.data();
+      setBalance(balanceData.highScoreBalance + balanceData.lotteryBalance);
+  
+      // Message
+      const messageArrayLocal = [];
+      const messagesRef = collection(db, 'users/' + user.uid + '/messages');
+      const dateSnapshots = await getDocs(messagesRef); // Await Firestore call
+      dateSnapshots.forEach((dateDoc) => {
+        const messageData = dateDoc.data();
+        if (messageData.accountCreationMessage) messageArrayLocal.push(messageData.accountCreationMessage);
+        if (messageData.lotteryMessage) messageArrayLocal.push(messageData.lotteryMessage);
+        if (messageData.highScoreMessage) messageArrayLocal.push(messageData.highScoreMessage);
+        if (messageData.transferBalanceMessage) messageArrayLocal.push(messageData.transferBalanceMessage);
+      });
+      setMessageArray(messageArrayLocal);
+      
+    } catch (error) {
+      let errorMessage = error.message;
+      if (errorMessage.includes("invalid-email")) {
+        errorMessage = "The email entered is not valid";
+      } else if (errorMessage.includes("user-not-found")) {
+        errorMessage = "The email does not have a registered account";
+      } else if (errorMessage.includes("wrong-password")) {
+        errorMessage = "Invalid credentials";
+      }
+      setAlertMessage(errorMessage);
+      setAlertModalVisible(true);
+    }
+  };
+
+  const handleCreateAccount = async () => {
+    try {
+      if (!navigator.onLine) {
+        setAlertMessage("You are offline. Please check your connection");
+        setAlertModalVisible(true);
+        return;
+      }
+      if (!registerEmail || !isValidEmail(registerEmail)) {
+        setAlertMessage("Please enter a valid email address");
+        setAlertModalVisible(true);
+        return;
+      }
+  
+      if (!registerPassword) {
+        setAlertMessage("Please enter a password");
+        setAlertModalVisible(true);
+        return;
+      }
+      if (!registerConfirmPassword) {
+        setAlertMessage("Please confirm your password");
+        setAlertModalVisible(true);
+        return;
+      }
+      if (registerPassword !== registerConfirmPassword) {
+        setAlertMessage("The passwords do not match");
+        setAlertModalVisible(true);
+        return;
+      }
+  
+      setEmail(registerEmail);
+  
+      // Register the account with Firebase
+      const userCredentials = await createUserWithEmailAndPassword(auth, registerEmail, registerPassword);
+      const user = userCredentials.user;
+  
+      // Create a user document in Firestore
+      const docRef = doc(db, 'users', user.uid);
+      await setDoc(docRef, {
+        id: user.uid,
+        email: registerEmail,
+        highScoreBalance: 0,
+        lotteryBalance: 0
+      });
+  
+      setUserId(user.uid);
+      setRegisterModalVisible(false);
+      setRegisterEmail('');
+      setRegisterPassword('');
+      setRegisterConfirmPassword('');
+  
+      // Add "account created" message
+      const timeZone = 'America/Chicago';
+      const now = new Date();
+      const centralTime = toZonedTime(now, timeZone);
+      const formattedDate = format(centralTime, 'yyyy MM dd');
+      const formattedDate2 = format(centralTime, 'MMM dd yyyy');
+      
+      const accountCreationMessage = `${formattedDate2}: Account created.`;
+      const tempMessageArray = [...messageArray, accountCreationMessage];
+      setMessageArray(tempMessageArray);
+      setBalance(0);
+  
+      const messageDocRef = doc(db, 'users/' + user.uid + "/messages/" + formattedDate);
+      await setDoc(messageDocRef, { accountCreationMessage }, { merge: true });
+  
+      // Auto sign in the user
+      await signInWithEmailAndPassword(auth, registerEmail, registerPassword);
+      setSignedIn(true);
+  
+      // Refresh game stats
+      getGameStats(formattedDate);
+  
+    } catch (error) {
+      let errorMessage = error.message;
+      if (errorMessage.includes("email-already-in-use")) {
+        errorMessage = "This email is already associated with an account";
+      } else if (errorMessage.includes("invalid-email")) {
+        errorMessage = "The email entered is not valid";
+      } else if (errorMessage.includes("user-not-found")) {
+        errorMessage = "The email does not have a registered account";
+      }
+      setAlertMessage(errorMessage);
+      setAlertModalVisible(true);
+    }
+  };
+  
+  
+  /*const handleLogIn = () => {
     if (!navigator.onLine) {
       setAlertMessage("You are offline. Please check your connection")
       setAlertModalVisible(true);
@@ -601,6 +1055,7 @@ export const Game = () => {
         setUserId(user.uid);
         setSignInModalVisible(false);
 
+        
         const jsonUser = { username: user.uid, loggedIn: true};
         localStorage.setItem("currentUser", JSON.stringify(jsonUser));
         localStorage.setItem("email", email);
@@ -613,6 +1068,10 @@ export const Game = () => {
         const now = new Date();
         const centralTime = toZonedTime(now, timeZone);
         const formattedDate = format(centralTime, 'yyyy MM dd');
+        const formattedDate2 = format(centralTime, 'MMM dd');
+        setTodayString(formattedDate);
+        setTodayFriendly(formattedDate2);
+
 
         getGameStats(formattedDate);
         // User Score
@@ -669,7 +1128,7 @@ export const Game = () => {
         setAlertMessage(errorMessage);
         setAlertModalVisible(true);
       });
-  }
+  } 
 
   const handleCreateAccount = () => {
     if (!navigator.onLine) {
@@ -716,7 +1175,7 @@ export const Game = () => {
       localStorage.setItem("email", registerEmail);
       setRegisterEmail('');
       setRegisterPassword('');
-      setRegisterComfirmPassword('');
+      setRegisterConfirmPassword('');
 
       //Add "account created" message
       const timeZone = 'America/Chicago';
@@ -767,7 +1226,7 @@ export const Game = () => {
       setAlertMessage(errorMessage);
       setAlertModalVisible(true);
     })
-  }
+  } */
 
   const showForgotPasswordModal = () => {
     setForgotPasswordModalVisible(true);
@@ -801,11 +1260,19 @@ export const Game = () => {
   const handleSignOut = () => {
     signOut(auth)
     .then(() => {
-      localStorage.removeItem("currentUser");
       setSignedIn(false);
       setUserTotal(0);
       setBalance(0);
-      setEmail(localStorage.getItem("email"));
+
+      const timeZone = 'America/Chicago';
+      const now = new Date();
+      const centralTime = toZonedTime(now, timeZone);
+      const formattedDate = format(centralTime, 'yyyy MM dd');
+      const formattedDate2 = format(centralTime, 'MMM dd');
+
+      if (todayString != formattedDate) {
+        handleCutover(formattedDate, formattedDate2, true);
+      }
     })
     .catch(error => { 
       setAlertMessage(error.message);
@@ -815,6 +1282,7 @@ export const Game = () => {
   
   return (
     <section className={styles.container}>
+      <div id="ad-container"></div>
       <header className={styles.header}>
         <div className={styles.leftHeader}>
           <p className={styles.title}>Brain Bucks</p>
@@ -844,7 +1312,7 @@ export const Game = () => {
                 alt="History" 
                 title="History"
                 className={styles.email}
-                onClick={() => setMessageModalVisible(true)}/>
+                onClick={messageModalClicked}/>
             </>
           )}
           
@@ -881,7 +1349,7 @@ export const Game = () => {
         </div>
         <div className={styles.mainSection}>
           <img src={getImageUrl("logo.png")} alt="Logo" className={styles.mainLogo}/>
-          <p className={styles.mainSectionText}>Prize Pool: ${payout}</p>
+          <p className={styles.mainSectionText}>Prize Pool for {todayFriendly}: ${payout}</p>
           <p className={styles.mainSectionText}>{questionPrompt}</p>
           <p className={correctAnimation ? styles.tada : incorrectAnimation ? styles.shake : styles.mainSectionText}>{questionString}</p>
           <div className={styles.inputButtonContainer}>
@@ -906,9 +1374,10 @@ export const Game = () => {
           </div>
         </div>
       </div>
-
+      {/* Native Ad Section */}
+      
       <footer className={styles.copyright}>
-        <p>Brain Bucks &copy; 2024</p>
+        <p>&copy; 2024 Brain Bucks</p>
       </footer>
 
       {/* MODALS */}
@@ -1005,7 +1474,7 @@ export const Game = () => {
           <input
             type={showRegisterConfirmPassword ? "text" : "password"}
             value={registerConfirmPassword}
-            onChange={(e) => setRegisterComfirmPassword(e.target.value)}
+            onChange={(e) => setRegisterConfirmPassword(e.target.value)}
             className={styles.input}/>
           <label className={styles.showPasswordLabel}>
             <input
