@@ -50,10 +50,6 @@ export const Game = () => {
     const savedScore = localStorage.getItem("userTotal");
     return savedScore ? JSON.parse(savedScore) : 0;
   })
-  const [userTotalSinceLastRefresh, setUserTotalSinceLastRefresh] = useState(() => {
-    const savedScore = localStorage.getItem("userTotalSinceLastRefresh");
-    return savedScore ? JSON.parse(savedScore) : 0;
-  })
   const [balance, setBalance] = useState(0);
   const [payout, setPayout] = useState(0);
   const [questionType, setQuestionType] = useState(() => {
@@ -99,7 +95,7 @@ export const Game = () => {
   const inputRef = useRef(null);
 
   //Use Effects
-
+  /* Temporarily disable ads
   //Native Ad
   useEffect(() => {
     // Create and append the native ad script
@@ -122,6 +118,7 @@ export const Game = () => {
     };
   }, []); // Run once on component mount
 
+  
   //Banner Ad
   useEffect(() => {
     // Detect screen size and load the appropriate ad script
@@ -177,16 +174,8 @@ export const Game = () => {
         bannerDiv.parentNode.removeChild(bannerDiv);
       }
     };
-  }, []); // Run only once on mount
+  }, []); // Run only once on mount */
   
-
-  /*useEffect(() => {
-    const script = document.createElement('script');
-    script.async = true;
-    script.setAttribute('data-cfasync', 'false');
-    script.src = '//pl24785939.profitablecpmrate.com/10df8c323657c0a9077217509b4857c3/invoke.js';
-    document.body.appendChild(script);
-  }, []); */
 
   useEffect(() => {
     localStorage.setItem("messageArray", JSON.stringify(messageArray));
@@ -196,9 +185,6 @@ export const Game = () => {
     localStorage.setItem("userTotal", JSON.stringify(userTotal));
   }, [userTotal]);
 
-  useEffect(() => {
-    localStorage.setItem("userTotalSinceLastRefresh", JSON.stringify(userTotalSinceLastRefresh));
-  }, [userTotalSinceLastRefresh]);
 
   useEffect(() => {
     localStorage.setItem("questionType", JSON.stringify(questionType));
@@ -227,9 +213,26 @@ export const Game = () => {
 
   //Main useEffect
   useEffect(() => {
+    const timeZone = 'America/Chicago';
+    const now = new Date();
+    const centralTime = toZonedTime(now, timeZone);
+    const formattedDate = format(centralTime, 'yyyy MM dd');
+    const formattedDate2 = format(centralTime, 'MMM dd');
+    setTodayString(formattedDate);
+    setTodayFriendly(formattedDate2);
+
+    // Load question
+    if (!question) {
+      setQuestion(generateQuestion());
+    }
+
+    // Load Payout, Leader total, and overall total
+    getGameStats(formattedDate);
+
 
     // Firebase listener to check if a user is logged in
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+
       if (user) {
         // User is signed in, get their UID
         setSignedIn(true);
@@ -248,22 +251,7 @@ export const Game = () => {
     return () => unsubscribe();
   }, []);
 
-  const loadUserData = async (uid) => {
-    const timeZone = 'America/Chicago';
-    const now = new Date();
-    const centralTime = toZonedTime(now, timeZone);
-    const formattedDate = format(centralTime, 'yyyy MM dd');
-    setTodayString(formattedDate);
-    const formattedDate2 = format(centralTime, 'MMM dd');
-    setTodayFriendly(formattedDate2);
-
-    // Load question
-    if (!question) {
-      setQuestion(generateQuestion());
-    }
-
-    // Load Payout, Leader total, and overall total
-    getGameStats(formattedDate);
+  const loadUserData = async (uid, formattedDate) => {
 
     // If the user total isn't saved to local storage, get it from the database
     if (!userTotal) {
@@ -625,53 +613,67 @@ export const Game = () => {
 
 
   //Refresh
+
   const handleRefresh = () => {
+    //Check if new date
     if (!navigator.onLine) {
       setAlertMessage("You are offline. Please check your connection");
       setAlertModalVisible(true);
       return;
     }
 
-    // If new day, let's handle cutover
     const timeZone = 'America/Chicago';
     const now = new Date();
     const centralTime = toZonedTime(now, timeZone);
     const formattedDate = format(centralTime, 'yyyy MM dd');
-    const formattedDate2 = format(centralTime, 'MMM dd')
-    
+    const formattedDate2 = format(centralTime, 'MMM dd');
+
     if (todayString != formattedDate) {
       handleCutover(formattedDate, formattedDate2);
-      inputRef.current.focus();
       return;
     }
-    
 
-    var userDocRef = doc(db, 'dates/' + todayString + '/users', userId);
-    setDoc(userDocRef, {
-      userTotal: userTotal
-    }, {merge: true});
-
-    var datesDocRef = doc(db, 'dates', todayString);
+    var datesDocRef = doc(db, 'dates', formattedDate);
     getDoc(datesDocRef).then(docSnap => {
       if (docSnap.exists()) {
         var data = docSnap.data();
         var currentHighScore = data.highScore;
-        if (userTotal >= currentHighScore) {
+        setLeaderTotal(currentHighScore);
+        var currentTotal = data.total;
+        setTotal(currentTotal);
+      }
+    })
+
+    inputRef.current.focus();
+
+  }
+  const handleRefreshOnCorrect = (formattedDate, newUserTotal) => {
+
+    var userDocRef = doc(db, 'dates/' + formattedDate + '/users', userId);
+    setDoc(userDocRef, {
+      userTotal: newUserTotal
+    }, {merge: true});
+
+    var datesDocRef = doc(db, 'dates', formattedDate);
+    getDoc(datesDocRef).then(docSnap => {
+      if (docSnap.exists()) {
+        var data = docSnap.data();
+        var currentHighScore = data.highScore;
+        if (newUserTotal >= currentHighScore) {
           setDoc(datesDocRef, {
-            highScore: userTotal,
+            highScore: newUserTotal,
             user: userId
           }, {merge: true});
-          setLeaderTotal(userTotal);
+          setLeaderTotal(newUserTotal);
         }
         else {
           setLeaderTotal(currentHighScore);
         }
         var currentTotal = data.total;
         setDoc(datesDocRef, {
-          total: currentTotal + userTotalSinceLastRefresh
+          total: currentTotal + 1
         }, {merge: true});
-        setTotal(currentTotal + userTotalSinceLastRefresh);
-        setUserTotalSinceLastRefresh(0);
+        setTotal(currentTotal + 1);
       }
     })
 
@@ -757,9 +759,10 @@ export const Game = () => {
     //Math Question
     if (questionType == 0) {
       var result = evaluate(question);
+      //alert(result);
       if (inputAnswer == result) {
         //Correct
-        handleCorrect();
+        handleCorrect(formattedDate);
       }
       else {
         //Incorrect
@@ -769,8 +772,9 @@ export const Game = () => {
     
     //Word Unscramble Question
     if (questionType == 1) {
-      if (inputAnswer.toLowerCase() == wordToUnscramble) {
-        handleCorrect();
+      //alert(wordToUnscramble);
+      if (inputAnswer.trim().toLowerCase() == wordToUnscramble) {
+        handleCorrect(formattedDate);
       }
       else {
         handleIncorrect();
@@ -780,7 +784,7 @@ export const Game = () => {
     /*Word Unscramble Question -skip these sequence questions
     if (questionType == 2) {
       if (inputAnswer == sequenceAnswer) {
-        handleCorrect();
+        handleCorrect(formattedDate);
       }
       else {
         handleIncorrect();
@@ -791,11 +795,10 @@ export const Game = () => {
     inputRef.current.focus();
   }
 
-  const handleCutover = (dateString, dateFriendly, skipUserData) => {
+  const handleCutover = async (dateString, dateFriendly, skipUserData) => {
     setAlertMessage("A new day has started");
     setAlertModalVisible(true);
     setUserTotal(0);
-    setUserTotalSinceLastRefresh(0);
 
     var datesDocRef = doc(db, 'dates', dateString);
     getDoc(datesDocRef).then(docSnap => {
@@ -820,13 +823,31 @@ export const Game = () => {
       var data = docSnap.data();
       setBalance(data.highScoreBalance + data.lotteryBalance);
     });
+
+    //Get new messages
+    const messageArrayLocal = [];
+    const messagesRef = collection(db, 'users/' + userId + '/messages');
+    const dateSnapshots = await getDocs(messagesRef);
+    dateSnapshots.forEach((dateDoc) => {
+      const messageData = dateDoc.data();
+      if (messageData.lotteryMessage) {
+        messageArrayLocal.push(messageData.lotteryMessage);
+      }
+      if (messageData.highScoreMessage) {
+        messageArrayLocal.push(messageData.highScoreMessage);
+      }
+      if (messageData.transferBalanceMessage) {
+        messageArrayLocal.push(messageData.transferBalanceMessage);
+      }
+    });
+    setMessageArray(messageArrayLocal);
   }
 
-  const handleCorrect = () => {
+  const handleCorrect = (formattedDate) => {
+    var newUserTotal = userTotal + 1;
     setCorrectAnimation(true);
     setTimeout(() => {
       setCorrectAnimation(false);
-      setUserTotalSinceLastRefresh((prev) => prev + 1);
 
       setTimeout(() => {
         setUserTotal((prevTotal) => prevTotal + 1);
@@ -834,6 +855,8 @@ export const Game = () => {
         setInputAnswer('');
       }, 200);
     }, 800);
+
+    handleRefreshOnCorrect(formattedDate, newUserTotal);
   }
 
   const handleIncorrect = () => {
@@ -1334,7 +1357,7 @@ export const Game = () => {
             <p className={styles.topSectionLeftText}>Balance: ${balance}</p>
           </div>
           <div className={styles.topSectionRight}>
-            <button 
+             <button 
               className={styles.topSectionRightButton}
               onClick={handleRefresh}>
                 Refresh
@@ -1521,11 +1544,9 @@ export const Game = () => {
           <br></br>
           <p className={styles.ruleHeader}>Top Right Guide</p>
           <p className={styles.ruleText}><span style={{fontWeight: "bold"}}>Message Icon: </span>A complete log of your history. This includes a history of your winnings and your payout requests.</p>
-          <p className={styles.ruleText}><span style={{fontWeight: "bold"}}>Refresh: </span>Refreshes the total and leader amounts, and updates your total in our database.</p>
+          <p className={styles.ruleText}><span style={{fontWeight: "bold"}}>Refresh: </span>Refreshes the total and leader amounts.</p>
           <p className={styles.ruleText}><span style={{fontWeight: "bold"}}>Transfer Balance: </span>Initiate a transfer of your balance directly to your PayPal account.</p>
           <p className={styles.ruleText}><span style={{fontWeight: "bold"}}>Contact: </span>A contact us page.</p>
-
-
           <button 
             className={styles.closeButton}
             onClick={closeInfoModal}>
