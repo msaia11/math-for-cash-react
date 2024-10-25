@@ -657,6 +657,9 @@ export const Game = () => {
       return;
     }
 
+    //Auto-focus on input field
+    inputRef.current.focus();
+
     const timeZone = 'America/Chicago';
     const now = new Date();
     const centralTime = toZonedTime(now, timeZone);
@@ -709,9 +712,6 @@ export const Game = () => {
         handleIncorrect();
       }
     } */
-
-    //Auto-focus on input field
-    inputRef.current.focus();
   }
 
   const handleCutover = async (formattedDate, dateFriendly, skipUserData) => {
@@ -834,9 +834,10 @@ export const Game = () => {
       const user = userCredential.user;
       setUserId(user.uid);
       setSignInModalVisible(false);
-      
       setSignedIn(true);
       setPassword('');
+      setAlertMessage("You have successfully signed in");
+      setAlertModalVisible(true);
   
       // Refresh game stats
       const timeZone = 'America/Chicago';
@@ -955,7 +956,8 @@ export const Game = () => {
   
       // Add "account created" message
       const accountCreationMessage = `${formattedDate2}: Account created.`;
-      const tempMessageArray = [...messageArray, accountCreationMessage];
+      const tempMessageArray = [];
+      tempMessageArray.push(accountCreationMessage);
       setMessageArray(tempMessageArray);
       setBalance(0);
   
@@ -965,6 +967,8 @@ export const Game = () => {
       // Auto sign in the user
       await signInWithEmailAndPassword(auth, registerEmail, registerPassword);
       setSignedIn(true);
+      setAlertMessage("You have successfully created an account");
+      setAlertModalVisible(true);
   
       // Refresh game stats
       getGameStats(formattedDate);
@@ -977,7 +981,16 @@ export const Game = () => {
         errorMessage = "The email entered is not valid";
       } else if (errorMessage.includes("user-not-found")) {
         errorMessage = "The email does not have a registered account";
+      } else if (errorMessage.includes("lower case")) {
+        errorMessage = "Password must contain a lower case character";
+      } else if (errorMessage.includes("uppper case")) {
+        errorMessage = "Password must contain an upper case character";
+      } else if (errorMessage.includes("6 characters")) {
+        errorMessage = "Password must contain at least 6 characters";
+      } else if (errorMessage.includes("numeric")) {
+        errorMessage = "Password must contain a numeric character";
       }
+
       setAlertMessage(errorMessage);
       setAlertModalVisible(true);
     }
@@ -1019,6 +1032,8 @@ export const Game = () => {
       setSignedIn(false);
       setUserTotal(0);
       setBalance(0);
+      setAlertMessage("You have successfully signed out");
+      setAlertModalVisible(true);
   
       const timeZone = 'America/Chicago';
       const now = new Date();
@@ -1038,6 +1053,7 @@ export const Game = () => {
       if (lastUpdate !== formattedDate) {
         handleCutover(formattedDate, formattedDate2, true);
       }
+
     } catch (error) {
       setAlertMessage(error.message);
       setAlertModalVisible(true);
@@ -1248,10 +1264,18 @@ export const Game = () => {
             />
             <span className={styles.checkboxText}>Show Password</span>
           </label>
+          <div>
+            <ul className={styles.passwordRequirementTitle}>Minimum password requirements:
+              <li className={styles.passwordRequirementItem}>Six characters</li>
+              <li className={styles.passwordRequirementItem}>One uppercase character</li>
+              <li className={styles.passwordRequirementItem}>One lowercase character</li>
+              <li className={styles.passwordRequirementItem}>One numeric character</li>
+            </ul>
+          </div>
 
           {/* Create Account */}
           <button 
-            className={styles.signInButton}
+            className={styles.createAccountButton}
             onClick={handleCreateAccount}>
             Create Account
           </button>

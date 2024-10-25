@@ -208,6 +208,24 @@
   cursor: pointer;
 }
 
+.createAccountButton {
+  border-radius: 4px;
+  background-color: var(--color-button);
+  color: var(--color-button-text);
+  height: 50px;
+  width: 100%;
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: bold;
+  border-color: var(--color-button-border);
+  font-family: var(--font-button-text), var(--font-button-text-secondary);
+}
+
+.createAccountButton:hover {
+  background-color: var(--color-button-hover);
+  cursor: pointer;
+}
+
 .forgotPasswordButton {
   border-radius: 4px;
   background-color: aliceblue;
@@ -416,6 +434,20 @@
 
 .email:hover {
   cursor: pointer;
+}
+
+.passwordRequirementTitle {
+  font-family: var(--font-button-text), var(--font-button-text-secondary);
+  font-size: 14px;
+  text-align: left;
+  margin-top: 6px;
+}
+
+.passwordRequirementItem{
+  font-family: var(--font-button-text), var(--font-button-text-secondary);
+  font-size: 12px;
+  margin-left: 30px;
+  text-align: left;
 }
 
 .messageText {
