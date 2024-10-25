@@ -477,6 +477,7 @@
   flex-direction: column; /* Default for larger screens */
   align-items: center;
   width: 100%;
+  margin-bottom: 50px;
 }
 
 /* Adjustments for smaller screens */

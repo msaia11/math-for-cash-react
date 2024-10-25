@@ -40,7 +40,6 @@ export const Game = () => {
   const [alertMessage, setAlertMessage] = useState('');
 
   //Dates
-  const [todayString, setTodayString] = useState('');
   const [todayFriendly, setTodayFriendly] = useState('');
 
   //Game Data
@@ -95,7 +94,6 @@ export const Game = () => {
   const inputRef = useRef(null);
 
   //Use Effects
-  /* Temporarily disable ads
   //Native Ad
   useEffect(() => {
     // Create and append the native ad script
@@ -174,7 +172,7 @@ export const Game = () => {
         bannerDiv.parentNode.removeChild(bannerDiv);
       }
     };
-  }, []); // Run only once on mount */
+  }, []); // Run only once on mount
   
 
   useEffect(() => {
@@ -213,43 +211,67 @@ export const Game = () => {
 
   //Main useEffect
   useEffect(() => {
-    const timeZone = 'America/Chicago';
-    const now = new Date();
-    const centralTime = toZonedTime(now, timeZone);
-    const formattedDate = format(centralTime, 'yyyy MM dd');
-    const formattedDate2 = format(centralTime, 'MMM dd');
-    setTodayString(formattedDate);
-    setTodayFriendly(formattedDate2);
-
-    // Load question
-    if (!question) {
-      setQuestion(generateQuestion());
-    }
-
-    // Load Payout, Leader total, and overall total
-    getGameStats(formattedDate);
-
-
-    // Firebase listener to check if a user is logged in
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-
-      if (user) {
-        // User is signed in, get their UID
-        setSignedIn(true);
-        setUserId(user.uid);
-
-        // Load user-specific data
-        loadUserData(user.uid);
-      } else {
-        // User is signed out
-        setSignedIn(false);
-        setUserId(null);
+    const initialize = async () => {
+      const timeZone = 'America/Chicago';
+      const now = new Date();
+      const centralTime = toZonedTime(now, timeZone);
+      const formattedDate = format(centralTime, 'yyyy MM dd');
+      const formattedDate2 = format(centralTime, 'MMM dd');
+  
+      // Load question
+      if (!question) {
+        setQuestion(generateQuestion());
       }
-    });
-
-    // Clean up the listener on component unmount
-    return () => unsubscribe();
+  
+      // Load Payout, Leader total, and overall total
+      getGameStats(formattedDate);
+  
+      // Firebase listener to check if a user is logged in
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          // User is signed in, get their UID
+          setSignedIn(true);
+          setUserId(user.uid);
+  
+          // Load user-specific data
+          loadUserData(user.uid);
+        } else {
+          // User is signed out
+          setSignedIn(false);
+          setUserId(null);
+          setUserTotal(0);
+        }
+      });
+  
+      try {
+        // Handle Cutover if needed
+        let lastUpdate;
+        if (userId) { // Ensure userId is available before trying to access user data
+          const userDocRef = doc(db, 'users', userId);
+          const userDocSnap = await getDoc(userDocRef);
+          
+          if (userDocSnap.exists()) {
+            const data = userDocSnap.data();
+            lastUpdate = data.lastUpdate;
+          }
+  
+          if (lastUpdate !== formattedDate) {
+            handleCutover(formattedDate, formattedDate2);
+          }
+        }
+  
+        setTodayFriendly(formattedDate2);
+      } catch (error) {
+        console.error("Error fetching user data or handling cutover:", error);
+      }
+  
+      // Clean up the listener on component unmount
+      return () => unsubscribe();
+    };
+  
+    initialize();
   }, []);
+  
 
   const loadUserData = async (uid, formattedDate) => {
 
@@ -294,147 +316,6 @@ export const Game = () => {
     }
   };
 
-  /*useEffect(() => {
-    const loadUserData = async () => {
-      // Get today's date in central time
-      const timeZone = 'America/Chicago';
-      const now = new Date();
-      const centralTime = toZonedTime(now, timeZone);
-      const formattedDate = format(centralTime, 'yyyy MM dd');
-      setTodayString(formattedDate);
-      const formattedDate2 = format(centralTime, 'MMM dd');
-      setTodayFriendly(formattedDate2);
-  
-      // Load question
-      if (!question) {
-        setQuestion(generateQuestion());
-      }
-  
-      // Load Payout, Leader total, and overall total
-      getGameStats(formattedDate);
-  
-      // Load user if signed in
-      const storedToken = localStorage.getItem("userToken");
-  
-      if (storedToken) {
-        setSignedIn(true);
-  
-        try {
-          const decodedToken = await getAuth().verifyIdToken(storedToken);
-          const uid = decodedToken.uid;
-          setUserId(uid);
-  
-          // Fetch user total, messages, and balance
-          if (!userTotal) {
-            const userDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
-            const docSnap = await getDoc(userDocRef);
-            setUserTotal(docSnap.exists() ? docSnap.data().userTotal : 0);
-          }
-  
-          if (messageArray.length === 0) {
-            const messageArrayLocal = [];
-            const messagesRef = collection(db, 'users/' + uid + '/messages');
-            const dateSnapshots = await getDocs(messagesRef);
-            dateSnapshots.forEach((dateDoc) => {
-              const messageData = dateDoc.data();
-              if (messageData.lotteryMessage) messageArrayLocal.push(messageData.lotteryMessage);
-              if (messageData.highScoreMessage) messageArrayLocal.push(messageData.highScoreMessage);
-              if (messageData.transferBalanceMessage) messageArrayLocal.push(messageData.transferBalanceMessage);
-            });
-            setMessageArray(messageArrayLocal);
-          }
-  
-          const balanceDocRef = doc(db, 'users', uid);
-          const balanceDocSnap = await getDoc(balanceDocRef);
-          setBalance(balanceDocSnap.data().highScoreBalance + balanceDocSnap.data().lotteryBalance);
-        } catch (error) {
-          console.error("Error verifying token or loading user data:", error);
-          setAlertMessage("Failed to load user data. Please try again. Error: " + error);
-          setAlertModalVisible(true);
-        }
-      }
-    };
-  
-    // Call the helper function
-    loadUserData();
-  }, []);  */
-  
-  /*useEffect(() => {
-    //Get today's date, in central time
-    const timeZone = 'America/Chicago';
-    const now = new Date();
-    const centralTime = toZonedTime(now, timeZone);
-    const formattedDate = format(centralTime, 'yyyy MM dd');
-    setTodayString(formattedDate);
-    const formattedDate2 = format(centralTime, 'MMM dd')
-    setTodayFriendly(formattedDate2);
-
-    //Load question
-    if (!question) {
-      setQuestion(generateQuestion());
-    }
-
-    //Load Payout, Leader total, and overall total
-    getGameStats(formattedDate);
-
-    //Load user if signed in
-    const storedToken = localStorage.getItem("token");
-    
-    if (storedToken) {
-      setSignedIn(true);
-
-      var uid;
-      getAuth()
-        .verify(storedToken)
-        .then((decodedToken) => {
-          uid = decodedToken.uid
-      });
-
-      setUserId(uid);
-      
-      // If the user total isn't saved to local storage, get it from the database
-      if (!userTotal) {
-        var userDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
-        getDoc(userDocRef).then(docSnap => {
-          if (docSnap.exists()) {
-            var data = docSnap.data();
-            setUserTotal(data.userTotal);
-          }
-          else {
-            setUserTotal(0);
-          }
-        })
-      }
-      // If the messageArray isn't saved to local storage, get it from the database
-      if (messageArray.length == 0) {
-        var messageArrayLocal = [];
-        const messagesRef = collection(db, 'users/' + uid + '/messages');
-        getDocs(messagesRef).then(dateSnapshots => {
-          for (const dateDoc of dateSnapshots.docs) {
-            const messageData = dateDoc.data();
-            if (messageData.lotteryMessage) {
-              messageArrayLocal.push(messageData.lotteryMessage);
-            }
-            if (messageData.highScoreMessage) {
-              messageArrayLocal.push(messageData.highScoreMessage);
-            }
-            if (messageData.transferBalanceMessage) {
-              messageArrayLocal.push(messageData.transferBalanceMessage);
-            }
-          }
-          setMessageArray(messageArrayLocal);
-        })
-      }
-
-      // User Balance
-      var balanceDocRef = doc(db, 'users', uid);
-      getDoc(balanceDocRef).then(docSnap => {
-        var data = docSnap.data();
-        setBalance(data.highScoreBalance + data.lotteryBalance);
-      })
-    }
-  }, []) */
-
   
   //Close Modals
   const closeAlertModalVisible = () => {
@@ -458,14 +339,22 @@ export const Game = () => {
   }
 
   //Message Modal
-  const messageModalClicked = () => {
+  const messageModalClicked = async () => {
     const timeZone = 'America/Chicago';
     const now = new Date();
     const centralTime = toZonedTime(now, timeZone);
     const formattedDate = format(centralTime, 'yyyy MM dd');
     const formattedDate2 = format(centralTime, 'MMM dd');
 
-    if (todayString != formattedDate) {
+    var lastUpdate;
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef); // Await Firestore call
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      lastUpdate = data.lastUpdate;
+    } 
+
+    if (lastUpdate != formattedDate) {
       handleCutover(formattedDate, formattedDate2);
     }
     
@@ -483,7 +372,7 @@ export const Game = () => {
     setTransferBalanceModalVisible(true);
   }
 
-  const handleRequestPayout = () => {
+  const handleRequestPayout = async () => {
     if (!navigator.onLine) {
       setAlertMessage("You are offline. Please check your connection");
       setAlertModalVisible(true);
@@ -520,7 +409,14 @@ export const Game = () => {
     const formattedDate2 = format(centralTime, 'MMM dd');
     const formattedDate3 = format(centralTime, 'MMM dd yyyy');
 
-    if (todayString != formattedDate) {
+    var lastUpdate;
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef); // Await Firestore call
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      lastUpdate = data.lastUpdate;
+    } 
+    if (lastUpdate != formattedDate) {
       handleCutover(formattedDate, formattedDate2);
     }
 
@@ -532,7 +428,6 @@ export const Game = () => {
     })
     
 
-    var userDocRef = doc(db, 'users', userId);
     setDoc(userDocRef, {
       highScoreBalance: 0,
       lotteryBalance: 0
@@ -570,7 +465,7 @@ export const Game = () => {
     setContactUsModalVisible(true);
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!navigator.onLine) {
       setAlertMessage("You are offline. Please check your connection");
       setAlertModalVisible(true);
@@ -595,7 +490,15 @@ export const Game = () => {
     const formattedDate = format(centralTime, 'yyyy MM dd');
     const formattedDate2 = format(centralTime, 'MMM dd');
 
-    if (todayString != formattedDate) {
+    var lastUpdate;
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef); // Await Firestore call
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      lastUpdate = data.lastUpdate;
+    } 
+
+    if (lastUpdate != formattedDate) {
       handleCutover(formattedDate, formattedDate2);
     }
 
@@ -614,7 +517,7 @@ export const Game = () => {
 
   //Refresh
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     //Check if new date
     if (!navigator.onLine) {
       setAlertMessage("You are offline. Please check your connection");
@@ -628,7 +531,15 @@ export const Game = () => {
     const formattedDate = format(centralTime, 'yyyy MM dd');
     const formattedDate2 = format(centralTime, 'MMM dd');
 
-    if (todayString != formattedDate) {
+    var lastUpdate;
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef); // Await Firestore call
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      lastUpdate = data.lastUpdate;
+    } 
+
+    if (lastUpdate != formattedDate) {
       handleCutover(formattedDate, formattedDate2);
       return;
     }
@@ -733,7 +644,7 @@ export const Game = () => {
   }
 
   //Handle Answer
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = async () => {
     if (!navigator.onLine) {
       setAlertMessage("You are offline. Please check your connection");
       setAlertModalVisible(true);
@@ -752,7 +663,15 @@ export const Game = () => {
     const formattedDate = format(centralTime, 'yyyy MM dd');
     const formattedDate2 = format(centralTime, 'MMM dd');
 
-    if (todayString != formattedDate) {
+    var lastUpdate;
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef); // Await Firestore call
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      lastUpdate = data.lastUpdate;
+    } 
+
+    if (lastUpdate != formattedDate) {
       handleCutover(formattedDate, formattedDate2);
     }
 
@@ -795,18 +714,17 @@ export const Game = () => {
     inputRef.current.focus();
   }
 
-  const handleCutover = async (dateString, dateFriendly, skipUserData) => {
+  const handleCutover = async (formattedDate, dateFriendly, skipUserData) => {
     setAlertMessage("A new day has started");
     setAlertModalVisible(true);
     setUserTotal(0);
 
-    var datesDocRef = doc(db, 'dates', dateString);
+    var datesDocRef = doc(db, 'dates', formattedDate);
     getDoc(datesDocRef).then(docSnap => {
       if (docSnap.exists()) {
         var data = docSnap.data();
         setLeaderTotal(data.highScore);
         setTotal(data.total);
-        setTodayString(dateString);
         setTodayFriendly(dateFriendly);
       }
       else {
@@ -818,11 +736,18 @@ export const Game = () => {
     if (skipUserData) {
       return;
     }
-    var balanceDocRef = doc(db, 'users', userId);
-    getDoc(balanceDocRef).then(docSnap => {
+
+    //Balance
+    var userDocRef = doc(db, 'users', userId);
+    getDoc(userDocRef).then(docSnap => {
       var data = docSnap.data();
       setBalance(data.highScoreBalance + data.lotteryBalance);
     });
+
+    // Set Last update
+    await setDoc(userDocRef, {
+      lastUpdate: formattedDate
+    }, { merge: true });
 
     //Get new messages
     const messageArrayLocal = [];
@@ -866,10 +791,9 @@ export const Game = () => {
 
 
   //Firebase Functions
-  const getGameStats = (dateString) => {
+  const getGameStats = (formattedDate) => {
 
-    dateString = dateString ? dateString : todayString;
-    var datesDocRef = doc(db, 'dates', dateString);
+    var datesDocRef = doc(db, 'dates', formattedDate);
     getDoc(datesDocRef).then(docSnap => {
       if (docSnap.exists()) {
         var data = docSnap.data();
@@ -920,26 +844,30 @@ export const Game = () => {
       const centralTime = toZonedTime(now, timeZone);
       const formattedDate = format(centralTime, 'yyyy MM dd');
       const formattedDate2 = format(centralTime, 'MMM dd');
-      setTodayString(formattedDate);
       setTodayFriendly(formattedDate2);
   
       getGameStats(formattedDate); // Await the async call
   
       // User Score
-      const userDocRef = doc(db, 'dates/' + formattedDate + '/users', user.uid);
-      const userDocSnap = await getDoc(userDocRef); // Await Firestore call
-      if (userDocSnap.exists()) {
-        const data = userDocSnap.data();
+      const userDateDocRef = doc(db, 'dates/' + formattedDate + '/users', user.uid);
+      const userDateDocSnap = await getDoc(userDateDocRef); // Await Firestore call
+      if (userDateDocSnap.exists()) {
+        const data = userDateDocSnap.data();
         setUserTotal(data.userTotal);
       } else {
         setUserTotal(0);
       }
   
       // User Balance
-      const balanceDocRef = doc(db, 'users', user.uid);
-      const balanceDocSnap = await getDoc(balanceDocRef); // Await Firestore call
-      const balanceData = balanceDocSnap.data();
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef); // Await Firestore call
+      const balanceData = userDocSnap.data();
       setBalance(balanceData.highScoreBalance + balanceData.lotteryBalance);
+
+      // Last update
+      await setDoc(userDocRef, {
+        lastUpdate: formattedDate
+      }, { merge: true });
   
       // Message
       const messageArrayLocal = [];
@@ -1002,6 +930,12 @@ export const Game = () => {
       // Register the account with Firebase
       const userCredentials = await createUserWithEmailAndPassword(auth, registerEmail, registerPassword);
       const user = userCredentials.user;
+
+      const timeZone = 'America/Chicago';
+      const now = new Date();
+      const centralTime = toZonedTime(now, timeZone);
+      const formattedDate = format(centralTime, 'yyyy MM dd');
+      const formattedDate2 = format(centralTime, 'MMM dd yyyy');
   
       // Create a user document in Firestore
       const docRef = doc(db, 'users', user.uid);
@@ -1009,7 +943,8 @@ export const Game = () => {
         id: user.uid,
         email: registerEmail,
         highScoreBalance: 0,
-        lotteryBalance: 0
+        lotteryBalance: 0,
+        lastUpdate: formattedDate
       });
   
       setUserId(user.uid);
@@ -1019,12 +954,6 @@ export const Game = () => {
       setRegisterConfirmPassword('');
   
       // Add "account created" message
-      const timeZone = 'America/Chicago';
-      const now = new Date();
-      const centralTime = toZonedTime(now, timeZone);
-      const formattedDate = format(centralTime, 'yyyy MM dd');
-      const formattedDate2 = format(centralTime, 'MMM dd yyyy');
-      
       const accountCreationMessage = `${formattedDate2}: Account created.`;
       const tempMessageArray = [...messageArray, accountCreationMessage];
       setMessageArray(tempMessageArray);
@@ -1054,202 +983,6 @@ export const Game = () => {
     }
   };
   
-  
-  /*const handleLogIn = () => {
-    if (!navigator.onLine) {
-      setAlertMessage("You are offline. Please check your connection")
-      setAlertModalVisible(true);
-      return;
-    }
-    if (!email) {
-      setAlertMessage("Please enter a valid email");
-      setAlertModalVisible(true);
-      return;
-    }
-    if (!password) {
-      setAlertMessage("Please enter a password");
-      setAlertModalVisible(true);
-      return;
-    }
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        //Signed in
-        const user = userCredential.user;
-        setUserId(user.uid);
-        setSignInModalVisible(false);
-
-        
-        const jsonUser = { username: user.uid, loggedIn: true};
-        localStorage.setItem("currentUser", JSON.stringify(jsonUser));
-        localStorage.setItem("email", email);
-        setSignedIn(true);
-        setPassword('');
-
-        //Refresh game stats
-        //Get today's date, in central time
-        const timeZone = 'America/Chicago';
-        const now = new Date();
-        const centralTime = toZonedTime(now, timeZone);
-        const formattedDate = format(centralTime, 'yyyy MM dd');
-        const formattedDate2 = format(centralTime, 'MMM dd');
-        setTodayString(formattedDate);
-        setTodayFriendly(formattedDate2);
-
-
-        getGameStats(formattedDate);
-        // User Score
-        var userDocRef = doc(db, 'dates/' + formattedDate + '/users', user.uid);
-        getDoc(userDocRef).then(docSnap => {
-          if (docSnap.exists()) {
-            var data = docSnap.data();
-            setUserTotal(data.userTotal);
-          }
-          else {
-            setUserTotal(0);
-          }
-        })
-        // User Balance
-        var balanceDocRef = doc(db, 'users', user.uid);
-        getDoc(balanceDocRef).then(docSnap => {
-          var data = docSnap.data();
-          setBalance(data.highScoreBalance + data.lotteryBalance);
-        })
-
-        // Message
-        var messageArrayLocal = [];
-        const messagesRef = collection(db, 'users/' + user.uid + '/messages');
-        getDocs(messagesRef).then(dateSnapshots => {
-          for (const dateDoc of dateSnapshots.docs) {
-            const messageData = dateDoc.data();
-            if (messageData.accountCreationMessage) {
-              messageArrayLocal.push(messageData.accountCreationMessage);
-            }
-            if (messageData.lotteryMessage) {
-              messageArrayLocal.push(messageData.lotteryMessage);
-            }
-            if (messageData.highScoreMessage) {
-              messageArrayLocal.push(messageData.highScoreMessage);
-            }
-            if (messageData.transferBalanceMessage) {
-              messageArrayLocal.push(messageData.transferBalanceMessage);
-            }
-          }
-          setMessageArray(messageArrayLocal);
-        })
-      })
-      .catch(error => {
-        var errorMessage = error.message;
-        if (errorMessage.includes("invalid-email")) {
-          errorMessage = "The email entered is not valid";
-        }
-        else if (errorMessage.includes("user-not-found")) {
-          errorMessage = "The email does not have a registered account"
-        }
-        else if (errorMessage.includes("wrong-password")) {
-          errorMessage = "Invalid credentials"
-        }
-        setAlertMessage(errorMessage);
-        setAlertModalVisible(true);
-      });
-  } 
-
-  const handleCreateAccount = () => {
-    if (!navigator.onLine) {
-      setAlertMessage("You are offline. Please check your connection");
-      setAlertModalVisible(true);
-      return;
-    }
-    if (!registerEmail || !isValidEmail(registerEmail)) {
-      setAlertMessage("Please enter a valid email address");
-      setAlertModalVisible(true);
-      return;
-    }
-
-    if (!registerPassword) {
-      setAlertMessage("Please enter a password");
-      setAlertModalVisible(true);
-      return;
-    }
-    if (!registerConfirmPassword) {
-      setAlertMessage("Please confirm your password");
-      setAlertModalVisible(true);
-      return;
-    }
-    if (registerPassword != registerConfirmPassword) {
-      setAlertMessage("The passwords do not match");
-      setAlertModalVisible(true);
-      return;
-    }
-    setEmail(registerEmail);
-    //Register the account with Firebase
-    createUserWithEmailAndPassword(auth, registerEmail, registerPassword)
-    .then((userCredentials) => {
-      //User Created
-      const user = userCredentials.user;
-      var docRef = doc(db, 'users', user.uid);
-      setDoc(docRef, {
-        id: user.uid,
-        email: registerEmail,
-        highScoreBalance: 0,
-        lotteryBalance: 0
-      });
-      setUserId(user.uid);
-      setRegisterModalVisible(false);
-      localStorage.setItem("email", registerEmail);
-      setRegisterEmail('');
-      setRegisterPassword('');
-      setRegisterConfirmPassword('');
-
-      //Add "account created" message
-      const timeZone = 'America/Chicago';
-      const now = new Date();
-      const centralTime = toZonedTime(now, timeZone);
-      const formattedDate2 = format(centralTime, 'MMM dd yyyy');
-      const formattedDate = format(centralTime, 'yyyy MM dd');
-
-      var accountCreationMessage = formattedDate2 + ": Account created."
-      var tempMessageArray = messageArray;
-      tempMessageArray.push(accountCreationMessage);
-      setMessageArray(tempMessageArray);
-      setBalance(0);
-
-      var docRef = doc(db, 'users/' + userId + "/messages/" + formattedDate);
-      setDoc(docRef, {
-        accountCreationMessage: accountCreationMessage
-      }, {merge: true});
-
-      //Auto sign in the user
-      signInWithEmailAndPassword(auth, registerEmail, registerPassword)
-        .then((userCredential) => {
-          //Signed in
-          const jsonUser = { username: user.uid, loggedIn: true};
-          localStorage.setItem("currentUser", JSON.stringify(jsonUser));
-          setSignedIn(true);
-  
-          //Refresh game stats
-          getGameStats(formattedDate);
-        })
-        .catch(error => {
-          var errorMessage = error.message;
-          if (errorMessage.includes("invalid-email")) {
-            errorMessage = "The email entered is not valid";
-          }
-          else if (errorMessage.includes("user-not-found")) {
-            errorMessage = "The email does not have a registered account"
-          }
-          setAlertMessage(errorMessage);
-          setAlertModalVisible(true);
-        });
-    })
-    .catch(error => {
-      var errorMessage = error.message;
-      if (errorMessage.includes("email-already-in-use")) {
-        errorMessage = "This email is already associated with an account"
-      }
-      setAlertMessage(errorMessage);
-      setAlertModalVisible(true);
-    })
-  } */
 
   const showForgotPasswordModal = () => {
     setForgotPasswordModalVisible(true);
@@ -1280,28 +1013,36 @@ export const Game = () => {
       });
   }
 
-  const handleSignOut = () => {
-    signOut(auth)
-    .then(() => {
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
       setSignedIn(false);
       setUserTotal(0);
       setBalance(0);
-
+  
       const timeZone = 'America/Chicago';
       const now = new Date();
       const centralTime = toZonedTime(now, timeZone);
       const formattedDate = format(centralTime, 'yyyy MM dd');
       const formattedDate2 = format(centralTime, 'MMM dd');
-
-      if (todayString != formattedDate) {
+  
+      const userDocRef = doc(db, 'users', userId);
+      const userDocSnap = await getDoc(userDocRef);
+  
+      let lastUpdate;
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
+        lastUpdate = data.lastUpdate;
+      }
+  
+      if (lastUpdate !== formattedDate) {
         handleCutover(formattedDate, formattedDate2, true);
       }
-    })
-    .catch(error => { 
+    } catch (error) {
       setAlertMessage(error.message);
       setAlertModalVisible(true);
-    });
-  }
+    }
+  };
   
   return (
     <section className={styles.container}>
