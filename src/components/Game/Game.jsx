@@ -49,7 +49,10 @@ export const Game = () => {
     const savedScore = localStorage.getItem("userTotal");
     return savedScore ? JSON.parse(savedScore) : 0;
   })
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState(() => {
+    const savedBalance = localStorage.getItem("balance");
+    return savedBalance ? JSON.parse(savedBalance) : 0;
+  })
   const [payout, setPayout] = useState(0);
   const [questionType, setQuestionType] = useState(() => {
     const savedQuestionType = localStorage.getItem("questionType");
@@ -176,6 +179,10 @@ export const Game = () => {
   
 
   useEffect(() => {
+    localStorage.setItem("balance", JSON.stringify(balance));
+  }, [balance]);
+
+  useEffect(() => {
     localStorage.setItem("messageArray", JSON.stringify(messageArray));
   }, [messageArray]);
 
@@ -211,6 +218,7 @@ export const Game = () => {
 
   //Main useEffect
   useEffect(() => {
+
     const initialize = async () => {
       const timeZone = 'America/Chicago';
       const now = new Date();
@@ -227,15 +235,33 @@ export const Game = () => {
       getGameStats(formattedDate);
   
       // Firebase listener to check if a user is logged in
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
           // User is signed in, get their UID
           setSignedIn(true);
           setUserId(user.uid);
-  
+
           // Load user-specific data
           loadUserData(user.uid);
-        } else {
+
+          try {
+            // Fetch last update and handle cutover if needed
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            let lastUpdate;
+            if (userDocSnap.exists()) {
+              const data = userDocSnap.data();
+              lastUpdate = data.lastUpdate;
+            }
+
+            if (lastUpdate !== formattedDate) {
+              handleCutover(formattedDate, formattedDate2);
+            }
+          } catch (error) {
+            console.error("Error fetching user data or handling cutover:", error);
+          }
+        }  else {
           // User is signed out
           setSignedIn(false);
           setUserId(null);
@@ -243,27 +269,7 @@ export const Game = () => {
         }
       });
   
-      try {
-        // Handle Cutover if needed
-        let lastUpdate;
-        if (userId) { // Ensure userId is available before trying to access user data
-          const userDocRef = doc(db, 'users', userId);
-          const userDocSnap = await getDoc(userDocRef);
-          
-          if (userDocSnap.exists()) {
-            const data = userDocSnap.data();
-            lastUpdate = data.lastUpdate;
-          }
-  
-          if (lastUpdate !== formattedDate) {
-            handleCutover(formattedDate, formattedDate2);
-          }
-        }
-  
-        setTodayFriendly(formattedDate2);
-      } catch (error) {
-        console.error("Error fetching user data or handling cutover:", error);
-      }
+      setTodayFriendly(formattedDate2);
   
       // Clean up the listener on component unmount
       return () => unsubscribe();
@@ -1481,7 +1487,6 @@ export const Game = () => {
           className={styles.alertModal} 
           onClick={(e) => e.stopPropagation()} 
         >
-          <p className={styles.modalTitle}>Alert</p>
           <p className={styles.alertMessage}>{alertMessage}</p>
           {/* Close Button */}
           <button 

@@ -239,7 +239,7 @@ const wordUnscrambleArray =
 
   //400
   'tooth',  'truly', 'upset',  'venue', 'vigor',
-  'waste',  'weary', 'wheel',  'wiser', 'worth',
+  'waste',  'weary', 'wheel',  'wiser',
   'zesty',  'abbey', 'abode', 'actor',  'admit', 'aider',
   'altar',  'aroma', 'asset', 'bingo', 'bongo',
   'cider',  'cliff', 'cocoa', 'coral',  'dairy', 'dally',
@@ -281,7 +281,7 @@ const wordUnscrambleArray =
   'entry', 'human', 'slant', 'dream', 'inner',
   'racer', 'honey', 'radar', 'trump', 'aback', 'abate',
   'abort', 'ached', 'acorn', 'adore', 'aging',
-  'aimed', 'alien', 'alive', 'anger', 'aorta', 
+  'aimed', 'alien', 'alive', 'aorta', 
   'asked', 'atone', 'beeps', 'bison', 'blame',
   'block', 'booze', 'bound', 'broom', 'buyer', 'cadet',
   'camel', 'canal', 'cheer', 'chore', 'cling', 'clove',
