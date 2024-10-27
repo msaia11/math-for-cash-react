@@ -177,6 +177,13 @@ export const Game = () => {
     };
   }, []); // Run only once on mount
   
+  const lastSignedInEmail = localStorage.getItem("lastSignedInEmail");
+
+  useEffect(() => {
+    if (lastSignedInEmail) {
+      setEmail(lastSignedInEmail); // Assuming `setEmailInput` is your email state setter
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("balance", JSON.stringify(balance));
@@ -256,6 +263,7 @@ export const Game = () => {
             }
 
             if (lastUpdate !== formattedDate) {
+              alert("Use Effect");
               handleCutover(formattedDate, formattedDate2);
             }
           } catch (error) {
@@ -322,6 +330,28 @@ export const Game = () => {
     }
   };
 
+  //get User Id
+  const getUserId = () => {
+    return new Promise((resolve, reject) => {
+      if (userId) {
+        // If userId is already set in the state, resolve with it
+        resolve(userId);
+      } else {
+        // Use onAuthStateChanged to retrieve user if userId is not in the state
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          unsubscribe(); // Unsubscribe immediately after getting the user
+          if (user) {
+            setUserId(user.uid); // Save userId to state
+            resolve(user.uid); // Resolve with userId
+          } else {
+            reject(new Error("User is not signed in"));
+          }
+        });
+      }
+    });
+  };
+  
+
   
   //Close Modals
   const closeAlertModalVisible = () => {
@@ -353,7 +383,8 @@ export const Game = () => {
     const formattedDate2 = format(centralTime, 'MMM dd');
 
     var lastUpdate;
-    const userDocRef = doc(db, 'users', userId);
+    const uid = await getUserId();
+    const userDocRef = doc(db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef); // Await Firestore call
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
@@ -416,7 +447,8 @@ export const Game = () => {
     const formattedDate3 = format(centralTime, 'MMM dd yyyy');
 
     var lastUpdate;
-    const userDocRef = doc(db, 'users', userId);
+    const uid = await getUserId();
+    const userDocRef = doc(db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef); // Await Firestore call
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
@@ -426,10 +458,10 @@ export const Game = () => {
       handleCutover(formattedDate, formattedDate2);
     }
 
-
-    addDoc(collection(db, 'requests/' + formattedDate + '/' + userId),  {
+    const userEmail = email ? email : auth.currentUser ? auth.currentUser.email : "";
+    addDoc(collection(db, 'requests/' + formattedDate + '/' + uid),  {
       paypalEmail: payPalEmail,
-      email: email,
+      email: userEmail,
       balance: balance,
     })
     
@@ -497,7 +529,8 @@ export const Game = () => {
     const formattedDate2 = format(centralTime, 'MMM dd');
 
     var lastUpdate;
-    const userDocRef = doc(db, 'users', userId);
+    const uid = await getUserId();
+    const userDocRef = doc(db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef); // Await Firestore call
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
@@ -507,12 +540,12 @@ export const Game = () => {
     if (lastUpdate != formattedDate) {
       handleCutover(formattedDate, formattedDate2);
     }
-
-    addDoc(collection(db, 'feedback/' + formattedDate + '/' + userId), {
+    const userEmail = email ? email : auth.currentUser ? auth.currentUser.email : "";
+    addDoc(collection(db, 'feedback/' + formattedDate + '/' + uid), {
       subject: subject,
       message: message,
-      userId: userId,
-      email: email
+      userId: uid,
+      email: userEmail
     })
 
     setAlertMessage("Thanks for your message!");
@@ -538,7 +571,8 @@ export const Game = () => {
     const formattedDate2 = format(centralTime, 'MMM dd');
 
     var lastUpdate;
-    const userDocRef = doc(db, 'users', userId);
+    const uid = await getUserId();
+    const userDocRef = doc(db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef); // Await Firestore call
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
@@ -546,6 +580,7 @@ export const Game = () => {
     } 
 
     if (lastUpdate != formattedDate) {
+      alert("refresh");
       handleCutover(formattedDate, formattedDate2);
       return;
     }
@@ -564,9 +599,10 @@ export const Game = () => {
     inputRef.current.focus();
 
   }
-  const handleRefreshOnCorrect = (formattedDate, newUserTotal) => {
+  const handleRefreshOnCorrect = async (formattedDate, newUserTotal) => {
 
-    var userDocRef = doc(db, 'dates/' + formattedDate + '/users', userId);
+    const uid = await getUserId();
+    var userDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
     setDoc(userDocRef, {
       userTotal: newUserTotal
     }, {merge: true});
@@ -579,7 +615,7 @@ export const Game = () => {
         if (newUserTotal >= currentHighScore) {
           setDoc(datesDocRef, {
             highScore: newUserTotal,
-            user: userId
+            user: uid
           }, {merge: true});
           setLeaderTotal(newUserTotal);
         }
@@ -673,7 +709,8 @@ export const Game = () => {
     const formattedDate2 = format(centralTime, 'MMM dd');
 
     var lastUpdate;
-    const userDocRef = doc(db, 'users', userId);
+    const uid = await getUserId();
+    const userDocRef = doc(db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef); // Await Firestore call
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
@@ -708,16 +745,6 @@ export const Game = () => {
         handleIncorrect();
       }
     }
-
-    /*Word Unscramble Question -skip these sequence questions
-    if (questionType == 2) {
-      if (inputAnswer == sequenceAnswer) {
-        handleCorrect(formattedDate);
-      }
-      else {
-        handleIncorrect();
-      }
-    } */
   }
 
   const handleCutover = async (formattedDate, dateFriendly, skipUserData) => {
@@ -744,7 +771,8 @@ export const Game = () => {
     }
 
     //Balance
-    var userDocRef = doc(db, 'users', userId);
+    const uid = await getUserId();
+    var userDocRef = doc(db, 'users', uid);
     getDoc(userDocRef).then(docSnap => {
       var data = docSnap.data();
       setBalance(data.highScoreBalance + data.lotteryBalance);
@@ -757,7 +785,7 @@ export const Game = () => {
 
     //Get new messages
     const messageArrayLocal = [];
-    const messagesRef = collection(db, 'users/' + userId + '/messages');
+    const messagesRef = collection(db, 'users/' + uid + '/messages');
     const dateSnapshots = await getDocs(messagesRef);
     dateSnapshots.forEach((dateDoc) => {
       const messageData = dateDoc.data();
@@ -844,6 +872,7 @@ export const Game = () => {
       setPassword('');
       setAlertMessage("You have successfully signed in");
       setAlertModalVisible(true);
+      localStorage.removeItem("lastSignedInEmail");
   
       // Refresh game stats
       const timeZone = 'America/Chicago';
@@ -1034,6 +1063,11 @@ export const Game = () => {
 
   const handleSignOut = async () => {
     try {
+      const userEmail = auth.currentUser ? auth.currentUser.email : null;
+      if (userEmail) {
+        localStorage.setItem("lastSignedInEmail", userEmail);
+      }
+
       await signOut(auth);
       setSignedIn(false);
       setUserTotal(0);
@@ -1047,7 +1081,8 @@ export const Game = () => {
       const formattedDate = format(centralTime, 'yyyy MM dd');
       const formattedDate2 = format(centralTime, 'MMM dd');
   
-      const userDocRef = doc(db, 'users', userId);
+      const uid = await getUserId();
+      const userDocRef = doc(db, 'users', uid);
       const userDocSnap = await getDoc(userDocRef);
   
       let lastUpdate;
@@ -1057,6 +1092,7 @@ export const Game = () => {
       }
   
       if (lastUpdate !== formattedDate) {
+        alert("sign out");
         handleCutover(formattedDate, formattedDate2, true);
       }
 
