@@ -263,7 +263,6 @@ export const Game = () => {
             }
 
             if (lastUpdate !== formattedDate) {
-              alert("Use Effect");
               handleCutover(formattedDate, formattedDate2);
             }
           } catch (error) {
@@ -580,7 +579,6 @@ export const Game = () => {
     } 
 
     if (lastUpdate != formattedDate) {
-      alert("refresh");
       handleCutover(formattedDate, formattedDate2);
       return;
     }
@@ -1092,7 +1090,6 @@ export const Game = () => {
       }
   
       if (lastUpdate !== formattedDate) {
-        alert("sign out");
         handleCutover(formattedDate, formattedDate2, true);
       }
 
