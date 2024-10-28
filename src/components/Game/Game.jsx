@@ -96,36 +96,46 @@ export const Game = () => {
   //Refs
   const inputRef = useRef(null);
 
+  const isMobile = window.innerWidth < 768;
+
   //Use Effects
-  
-  //Banner Ad
   //ExoClick
-  useEffect(() => {
-    // Load the ad script dynamically
-    const adScript = document.createElement("script");
-    adScript.src = "https://a.magsrv.com/ad-provider.js";
-    adScript.async = true;
-    document.body.appendChild(adScript);
-  
-    // Clean up the script on component unmount
-    return () => {
-      document.body.removeChild(adScript);
-    };
-  }, []);
 
   //Native
   useEffect(() => {
-    // Load the ad script dynamically
-    const adScript = document.createElement("script");
-    adScript.src = "https://a.magsrv.com/ad-provider.js";
-    adScript.async = true;
-    document.body.appendChild(adScript);
-
-    // Clean up script on component unmount
+    // Select the footer and ensure it exists
+    const footer = document.querySelector('footer');
+    if (!footer) return;
+  
+    // Create and append the ad container
+    const adDiv = document.createElement('ins');
+    adDiv.className = 'eas6a97888e20';
+    adDiv.setAttribute('data-zoneid', '5456088');
+  
+    // Insert the ad container above the footer
+    footer.parentNode.insertBefore(adDiv, footer);
+  
+    // Add the ad provider script to load the ad
+    const script = document.createElement('script');
+    script.async = true;
+    script.type = 'application/javascript';
+    script.src = 'https://a.magsrv.com/ad-provider.js';
+    footer.parentNode.insertBefore(script, adDiv);
+  
+    // Load the ad after both elements are in place
+    const initAdScript = document.createElement('script');
+    initAdScript.innerHTML = `(AdProvider = window.AdProvider || []).push({"serve": {}});`;
+    footer.parentNode.insertBefore(initAdScript, footer);
+  
+    // Clean up the ad elements when component unmounts
     return () => {
-      document.body.removeChild(adScript);
+      footer.parentNode.removeChild(adDiv);
+      footer.parentNode.removeChild(script);
+      footer.parentNode.removeChild(initAdScript);
     };
   }, []);
+  
+  
 
   /*AdSterra native
   //Native Ad
@@ -265,7 +275,6 @@ export const Game = () => {
     localStorage.setItem("question", JSON.stringify(question));
   }, [question]);
 
-
   //Main useEffect
   useEffect(() => {
 
@@ -392,8 +401,6 @@ export const Game = () => {
       }
     });
   };
-  
-
   
   //Close Modals
   const closeAlertModalVisible = () => {
@@ -1159,14 +1166,14 @@ export const Game = () => {
   };
   
   return (
-    <section>
-      {/* Mobile-only ad container */}
-      <div className={styles.adContainer}>
-        <ins className="eas6a97888e10" data-zoneid="5455994"></ins> 
-        <script>{`(AdProvider = window.AdProvider || []).push({"serve": {}});`}</script>
-      </div>
     <section className={styles.container}>
-      
+      <div className={styles.bannerAd}>
+        {isMobile ? (
+          <iframe src="//a.magsrv.com/iframe.php?idzone=5455994&size=300x50" width="300" height="50" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+        ) : (
+          <iframe src="//a.magsrv.com/iframe.php?idzone=5457138&size=728x90" width="728" height="90" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+        )}
+      </div>
       <header className={styles.header}>
         <div className={styles.leftHeader}>
           <p className={styles.title}>Brain Bucks</p>
@@ -1259,12 +1266,6 @@ export const Game = () => {
         </div>
       </div>
       {/* Native Ad Section */}
-      <div className={styles.adContainerFooter}>
-        <ins className="eas6a97888e20" data-zoneid="5456088"></ins>
-        <script>
-          {`(AdProvider = window.AdProvider || []).push({"serve": {}});`}
-        </script>
-      </div>
       <footer className={styles.copyright}>
         <p>&copy; 2024 Brain Bucks</p>
       </footer>
@@ -1603,7 +1604,6 @@ export const Game = () => {
 
 
       
-    </section>
     </section>
   )
 }

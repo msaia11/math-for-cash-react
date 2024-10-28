@@ -521,6 +521,11 @@
   margin-bottom: 10px;
 }
 
+.bannerAd {
+  text-align: center;
+  margin-top: 5px;
+}
+
 /* Adjustments for smaller screens */
 @media (max-width: 768px) {
 
