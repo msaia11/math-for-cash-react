@@ -97,6 +97,37 @@ export const Game = () => {
   const inputRef = useRef(null);
 
   //Use Effects
+  
+  //Banner Ad
+  //ExoClick
+  useEffect(() => {
+    // Load the ad script dynamically
+    const adScript = document.createElement("script");
+    adScript.src = "https://a.magsrv.com/ad-provider.js";
+    adScript.async = true;
+    document.body.appendChild(adScript);
+  
+    // Clean up the script on component unmount
+    return () => {
+      document.body.removeChild(adScript);
+    };
+  }, []);
+
+  //Native
+  useEffect(() => {
+    // Load the ad script dynamically
+    const adScript = document.createElement("script");
+    adScript.src = "https://a.magsrv.com/ad-provider.js";
+    adScript.async = true;
+    document.body.appendChild(adScript);
+
+    // Clean up script on component unmount
+    return () => {
+      document.body.removeChild(adScript);
+    };
+  }, []);
+
+  /*AdSterra native
   //Native Ad
   useEffect(() => {
     // Create and append the native ad script
@@ -119,8 +150,20 @@ export const Game = () => {
     };
   }, []); // Run once on component mount
 
-  
-  //Banner Ad
+
+  useEffect(() => {
+    // Load the ad script dynamically
+    const adScript = document.createElement("script");
+    adScript.src = "https://a.magsrv.com/ad-provider.js";
+    adScript.async = true;
+    document.body.appendChild(adScript);
+
+    // Clean up script on component unmount
+    return () => {
+      document.body.removeChild(adScript);
+    };
+  }, []);
+
   useEffect(() => {
     // Detect screen size and load the appropriate ad script
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
@@ -175,7 +218,7 @@ export const Game = () => {
         bannerDiv.parentNode.removeChild(bannerDiv);
       }
     };
-  }, []); // Run only once on mount
+  }, []); // Run only once on mount */
   
   const lastSignedInEmail = localStorage.getItem("lastSignedInEmail");
 
@@ -583,6 +626,7 @@ export const Game = () => {
       return;
     }
 
+    // Update highscore and total
     var datesDocRef = doc(db, 'dates', formattedDate);
     getDoc(datesDocRef).then(docSnap => {
       if (docSnap.exists()) {
@@ -594,6 +638,13 @@ export const Game = () => {
       }
     })
 
+    //Update user total - possible to be out of sync if on different devices
+    var dateUserDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
+    const dateUserDocSnap = await getDoc(dateUserDocRef);
+    if (dateUserDocSnap.exists()) {
+      var dateUserData = dateUserDocSnap.data();
+      setUserTotal(dateUserData.userTotal);
+    }
     inputRef.current.focus();
 
   }
@@ -751,18 +802,17 @@ export const Game = () => {
     setUserTotal(0);
 
     var datesDocRef = doc(db, 'dates', formattedDate);
-    getDoc(datesDocRef).then(docSnap => {
-      if (docSnap.exists()) {
-        var data = docSnap.data();
-        setLeaderTotal(data.highScore);
-        setTotal(data.total);
-        setTodayFriendly(dateFriendly);
-      }
-      else {
-        setAlertMessage("Cutover to new day has not completed. Please wait a few moments and try again.");
-        setAlertModalVisible(true);
-      }
-    })
+    const dateDocSnap = await getDoc(datesDocRef);
+    if (dateDocSnap.exists()) {
+      var data = dateDocSnap.data();
+      setLeaderTotal(data.highScore);
+      setTotal(data.total);
+      setTodayFriendly(dateFriendly);
+    }
+    else {
+      setAlertMessage("Cutover to new day has not completed. Please wait a few moments and try again.");
+      setAlertModalVisible(true);
+    }
 
     if (skipUserData) {
       return;
@@ -771,10 +821,11 @@ export const Game = () => {
     //Balance
     const uid = await getUserId();
     var userDocRef = doc(db, 'users', uid);
-    getDoc(userDocRef).then(docSnap => {
-      var data = docSnap.data();
-      setBalance(data.highScoreBalance + data.lotteryBalance);
-    });
+    const userDocSnap = await getDoc(userDocRef);
+    if (userDocSnap.exists()) {
+      var balanceData = userDocSnap.data();
+      setBalance(balanceData.highScoreBalance + balanceData.lotteryBalance);
+    }
 
     // Set Last update
     await setDoc(userDocRef, {
@@ -800,14 +851,22 @@ export const Game = () => {
     setMessageArray(messageArrayLocal);
   }
 
-  const handleCorrect = (formattedDate) => {
+  const handleCorrect = async (formattedDate) => {
     var newUserTotal = userTotal + 1;
+    const uid = await getUserId();
+    var dateUserDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
+    const dateUserDocSnap = await getDoc(dateUserDocRef);
+    if (dateUserDocSnap.exists()) {
+      var dateUserData = dateUserDocSnap.data();
+      newUserTotal = dateUserData.userTotal + 1;
+    }
+
     setCorrectAnimation(true);
     setTimeout(() => {
       setCorrectAnimation(false);
 
       setTimeout(() => {
-        setUserTotal((prevTotal) => prevTotal + 1);
+        setUserTotal(newUserTotal);
         setQuestion(generateQuestion);
         setInputAnswer('');
       }, 200);
@@ -1100,8 +1159,14 @@ export const Game = () => {
   };
   
   return (
+    <section>
+      {/* Mobile-only ad container */}
+      <div className={styles.adContainer}>
+        <ins className="eas6a97888e10" data-zoneid="5455994"></ins> 
+        <script>{`(AdProvider = window.AdProvider || []).push({"serve": {}});`}</script>
+      </div>
     <section className={styles.container}>
-      <div id="ad-container"></div>
+      
       <header className={styles.header}>
         <div className={styles.leftHeader}>
           <p className={styles.title}>Brain Bucks</p>
@@ -1194,7 +1259,12 @@ export const Game = () => {
         </div>
       </div>
       {/* Native Ad Section */}
-      
+      <div className={styles.adContainerFooter}>
+        <ins className="eas6a97888e20" data-zoneid="5456088"></ins>
+        <script>
+          {`(AdProvider = window.AdProvider || []).push({"serve": {}});`}
+        </script>
+      </div>
       <footer className={styles.copyright}>
         <p>&copy; 2024 Brain Bucks</p>
       </footer>
@@ -1533,6 +1603,7 @@ export const Game = () => {
 
 
       
+    </section>
     </section>
   )
 }
