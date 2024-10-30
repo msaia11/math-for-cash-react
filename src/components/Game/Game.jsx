@@ -100,7 +100,6 @@ export const Game = () => {
 
   //Use Effects
   //ExoClick
-
   //Native
   useEffect(() => {
     // Select the footer and ensure it exists
@@ -126,6 +125,9 @@ export const Game = () => {
     const initAdScript = document.createElement('script');
     initAdScript.innerHTML = `(AdProvider = window.AdProvider || []).push({"serve": {}});`;
     footer.parentNode.insertBefore(initAdScript, footer);
+
+    // Ensure footer remains below ad
+    adDiv.style.marginBottom = '10px'; // Add spacing between ad and footer
   
     // Clean up the ad elements when component unmounts
     return () => {
@@ -134,101 +136,40 @@ export const Game = () => {
       footer.parentNode.removeChild(initAdScript);
     };
   }, []);
-  
-  
 
-  /*AdSterra native
-  //Native Ad
+  //Banner Ads
   useEffect(() => {
-    // Create and append the native ad script
+    // Determine if the device is mobile or desktop based on screen width
+    const isMobile = window.innerWidth < 768;
+    const adContainerId = isMobile ? 'mobile-banner-ad' : 'desktop-banner-ad';
+    const adClass = isMobile ? 'eas6a97888e10' : 'eas6a97888e2';
+    const zoneId = isMobile ? '5455994' : '5457138';
+
+    // Create ad elements
     const script = document.createElement('script');
     script.async = true;
-    script['data-cfasync'] = 'false';
-    script.src = '//pl24785939.profitablecpmrate.com/10df8c323657c0a9077217509b4857c3/invoke.js';
+    script.type = "application/javascript";
+    script.src = "https://a.magsrv.com/ad-provider.js";
 
-    const adDiv = document.createElement('div');
-    adDiv.id = 'container-10df8c323657c0a9077217509b4857c3';
+    const adContainer = document.createElement('ins');
+    adContainer.className = adClass;
+    adContainer.dataset.zoneid = zoneId;
 
-    const footer = document.querySelector('footer'); // Select the footer element
-    footer.parentNode.insertBefore(adDiv, footer);   // Insert adDiv above the footer
-    footer.parentNode.insertBefore(script, adDiv);   // Insert script just before the adDiv
+    const adScript = document.createElement('script');
+    adScript.innerHTML = '(AdProvider = window.AdProvider || []).push({"serve": {}});';
 
-    // Clean up the ad script when the component unmounts
+    // Append ad elements to the specified container
+    const adElement = document.getElementById(adContainerId);
+    adElement.appendChild(script);
+    adElement.appendChild(adContainer);
+    adElement.appendChild(adScript);
+
+    // Cleanup
     return () => {
-      footer.parentNode.removeChild(adDiv);
-      footer.parentNode.removeChild(script);
-    };
-  }, []); // Run once on component mount
-
-
-  useEffect(() => {
-    // Load the ad script dynamically
-    const adScript = document.createElement("script");
-    adScript.src = "https://a.magsrv.com/ad-provider.js";
-    adScript.async = true;
-    document.body.appendChild(adScript);
-
-    // Clean up script on component unmount
-    return () => {
-      document.body.removeChild(adScript);
+      adElement.innerHTML = ''; // Remove ad elements on unmount
     };
   }, []);
-
-  useEffect(() => {
-    // Detect screen size and load the appropriate ad script
-    const isMobile = window.matchMedia('(max-width: 768px)').matches;
   
-    const bannerDiv = document.createElement('div'); // Create a div to hold the banner ad
-    bannerDiv.style.textAlign = 'center'; // Center the ad
-    bannerDiv.style.marginTop = '5px'; // Add margin on top
-
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-  
-    if (isMobile) {
-      // Mobile ad options
-      script.innerHTML = `
-        atOptions = {
-          'key' : '75174f627f857d2c52bd3f6fb3c939b2',
-          'format' : 'iframe',
-          'height' : 50,
-          'width' : 320,
-          'params' : {}
-        };
-      `;
-      const srcScript = document.createElement('script');
-      srcScript.type = 'text/javascript';
-      srcScript.src = "//www.highperformanceformat.com/75174f627f857d2c52bd3f6fb3c939b2/invoke.js";
-      bannerDiv.appendChild(script);
-      bannerDiv.appendChild(srcScript);
-    } else {
-      // Desktop ad options
-      script.innerHTML = `
-        atOptions = {
-          'key' : 'b519149682772d21846a7f1961eb39b9',
-          'format' : 'iframe',
-          'height' : 90,
-          'width' : 728,
-          'params' : {}
-        };
-      `;
-      const srcScript = document.createElement('script');
-      srcScript.type = 'text/javascript';
-      srcScript.src = "//www.highperformanceformat.com/b519149682772d21846a7f1961eb39b9/invoke.js";
-      bannerDiv.appendChild(script);
-      bannerDiv.appendChild(srcScript);
-    }
-  
-    const header = document.querySelector('header'); // Select the header element
-    header.parentNode.insertBefore(bannerDiv, header); // Insert the bannerDiv before the header
-  
-    // Clean up the scripts when the component unmounts
-    return () => {
-      if (bannerDiv && bannerDiv.parentNode) {
-        bannerDiv.parentNode.removeChild(bannerDiv);
-      }
-    };
-  }, []); // Run only once on mount */
   
   const lastSignedInEmail = localStorage.getItem("lastSignedInEmail");
 
@@ -619,8 +560,18 @@ export const Game = () => {
     const formattedDate = format(centralTime, 'yyyy MM dd');
     const formattedDate2 = format(centralTime, 'MMM dd');
 
+    // Update highscore, total, and payout
+    await getGameStats(formattedDate);
+
+    let uid;
+    try {
+      uid = await getUserId();
+    } catch (error) {
+      console.log("User is not signed in:", error.message);
+      return; // Exit if user is not signed in
+    }
+
     var lastUpdate;
-    const uid = await getUserId();
     const userDocRef = doc(db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef); // Await Firestore call
     if (userDocSnap.exists()) {
@@ -628,22 +579,10 @@ export const Game = () => {
       lastUpdate = data.lastUpdate;
     } 
 
-    if (lastUpdate != formattedDate) {
+    if (lastUpdate !== formattedDate) {
       handleCutover(formattedDate, formattedDate2);
       return;
     }
-
-    // Update highscore and total
-    var datesDocRef = doc(db, 'dates', formattedDate);
-    getDoc(datesDocRef).then(docSnap => {
-      if (docSnap.exists()) {
-        var data = docSnap.data();
-        var currentHighScore = data.highScore;
-        setLeaderTotal(currentHighScore);
-        var currentTotal = data.total;
-        setTotal(currentTotal);
-      }
-    })
 
     //Update user total - possible to be out of sync if on different devices
     var dateUserDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
@@ -655,6 +594,7 @@ export const Game = () => {
     inputRef.current.focus();
 
   }
+
   const handleRefreshOnCorrect = async (formattedDate, newUserTotal) => {
 
     const uid = await getUserId();
@@ -801,6 +741,33 @@ export const Game = () => {
         handleIncorrect();
       }
     }
+
+    // Display the interstitial ad after submiting an answer
+    const adZoneId = '5456004';
+
+    // Create and append the interstitial ad script
+    const adScript = document.createElement('script');
+    adScript.async = true;
+    adScript.type = 'application/javascript';
+    adScript.src = 'https://a.pemsrv.com/ad-provider.js';
+
+    const adContainer = document.createElement('ins');
+    adContainer.className = 'eas6a97888e33';
+    adContainer.setAttribute('data-zoneid', adZoneId);
+
+    document.body.appendChild(adContainer); // Append ad container to body
+    document.body.appendChild(adScript);    // Append ad script to body
+
+    // Load the ad after insertion
+    const adProviderScript = document.createElement('script');
+    adProviderScript.innerHTML = `(AdProvider = window.AdProvider || []).push({"serve": {}});`;
+    document.body.appendChild(adProviderScript);
+
+    // Listen for the interstitial ad display event
+    document.addEventListener(`creativeDisplayed-${adZoneId}`, function (e) {
+      alert("Interstitial ad displayed!");
+      alert(e.detail); // Additional details about the displayed ad
+    }, { once: true }); // Event listener will run once and then remove itself
   }
 
   const handleCutover = async (formattedDate, dateFriendly, skipUserData) => {
@@ -889,22 +856,22 @@ export const Game = () => {
 
 
   //Firebase Functions
-  const getGameStats = (formattedDate) => {
+  const getGameStats = async (formattedDate) => {
 
-    var datesDocRef = doc(db, 'dates', formattedDate);
-    getDoc(datesDocRef).then(docSnap => {
-      if (docSnap.exists()) {
-        var data = docSnap.data();
-        //Payout
-        setPayout(data.payout);
+    const datesDocRef = doc(db, 'dates', formattedDate);
+    const docSnap = await getDoc(datesDocRef);
+    
+    if (docSnap.exists()) {
+      var data = docSnap.data();
+      //Payout
+      setPayout(data.payout);
 
-        //Overall Total
-        setTotal(data.total);
+      //Overall Total
+      setTotal(data.total);
 
-        //Leader Total
-        setLeaderTotal(data.highScore);
-      }
-    }) 
+      //Leader Total
+      setLeaderTotal(data.highScore);
+    }
   }
 
   //Authentication Functions
@@ -1168,11 +1135,8 @@ export const Game = () => {
   return (
     <section className={styles.container}>
       <div className={styles.bannerAd}>
-        {isMobile ? (
-          <iframe src="//a.magsrv.com/iframe.php?idzone=5455994&size=300x50" width="300" height="50" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-        ) : (
-          <iframe src="//a.magsrv.com/iframe.php?idzone=5457138&size=728x90" width="728" height="90" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-        )}
+        <div id="mobile-banner-ad" style={{ display: window.innerWidth < 768 ? 'block' : 'none' }} />
+        <div id="desktop-banner-ad" style={{ display: window.innerWidth >= 768 ? 'block' : 'none' }} />
       </div>
       <header className={styles.header}>
         <div className={styles.leftHeader}>

@@ -523,7 +523,8 @@
 
 .bannerAd {
   text-align: center;
-  margin-top: 5px;
+  margin-top: 2px;
+  margin-bottom: 2px;
 }
 
 /* Adjustments for smaller screens */
@@ -683,8 +684,7 @@
     color: white;
     text-align: center;
     padding: 10px 0;
-    position: fixed;
-    bottom: 0; /* Always sticks to the bottom */
+    position: relative;
     width: 100%;
     z-index: 999; /* Ensure it's above other content */
     padding-bottom: env(safe-area-inset-bottom);
