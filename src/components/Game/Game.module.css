@@ -312,6 +312,49 @@
   cursor: pointer;
 }
 
+.refreshButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0px;
+  border-radius: 10px;
+  background-color: var(--color-button);
+  width: 135px;
+  height: 30px;
+  color: var(--color-button-text);
+  font-size: 14px;
+  font-weight: bold;
+  border-color: var(--color-button-border);
+  font-family: var(--font-button-text), var(--font-button-text-secondary);
+  text-decoration: none;
+  margin-bottom: 0px;
+}
+
+.refreshButton:hover {
+  background-color: var(--color-button-hover);
+  cursor: pointer;
+}
+
+.refreshButton:active {
+  background-color: var(--color-button-hover); /* Keep it darkened while pressed */
+  opacity: 0.9; /* Optionally, slightly reduce opacity for a pressed effect */
+}
+
+/* Disable hover effect on mobile */
+@media (hover: none) {
+  .submitButton:hover {
+    background-color: var(--color-button); /* Reset hover background */
+  }
+
+  .interstitial1:hover {
+    background-color: var(--color-button); /* Reset hover background */
+  }
+
+  .refreshButton:hover {
+    background-color: var(--color-button); /* Reset hover background */
+  }
+}
+
 .mainSection {
   margin-top: 50px;
   display: flex;
@@ -349,6 +392,9 @@
 }
 
 .submitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: var(--color-button);
   border-radius: 10px;
   margin-top: 10px;
@@ -359,11 +405,48 @@
   font-weight: bold;
   border-color: var(--color-button-border);
   font-family: var(--font-button-text), var(--font-button-text-secondary);
+  text-decoration: none;
+  border: 2px solid var(--color-button-border);
 }
 
 .submitButton:hover {
   background-color: var(--color-button-hover);
   cursor: pointer;
+}
+
+
+.submitButton:active {
+  background-color: var(--color-button-hover); /* Keep it darkened while pressed */
+  opacity: 0.9; /* Optionally, slightly reduce opacity for a pressed effect */
+}
+
+.interstitial1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-button);
+  border-radius: 10px;
+  margin-top: 10px;
+  height: 40px;
+  width: 100px;
+  color: var(--color-button-text);
+  font-size: 18px;
+  font-weight: bold;
+  border-color: var(--color-button-border);
+  font-family: var(--font-button-text), var(--font-button-text-secondary);
+  text-decoration: none;
+  border: 2px solid var(--color-button-border);
+}
+
+.interstitial1:hover {
+  background-color: var(--color-button-hover);
+  cursor: pointer;
+}
+
+
+.interstitial1:active {
+  background-color: var(--color-button-hover); /* Keep it darkened while pressed */
+  opacity: 0.9; /* Optionally, slightly reduce opacity for a pressed effect */
 }
 
 .copyright {
@@ -527,8 +610,39 @@
   margin-bottom: 2px;
 }
 
+.affiliateAd {
+  display: block;
+  margin: 15px auto; /* Center affiliate ad and add top/bottom margin */
+  max-width: 100%; /* Ensure responsive width */
+}
+
+.eas6a97888e20 {
+  display: block;
+  margin: 15px auto; /* Center native ad and add top/bottom margin */
+  max-width: 100%; /* Ensure responsive width */
+}
+
 /* Adjustments for smaller screens */
 @media (max-width: 768px) {
+
+  .refreshButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0px;
+    border-radius: 10px;
+    background-color: var(--color-button);
+    width: 135px;
+    height: 30px;
+    color: var(--color-button-text);
+    font-size: 14px;
+    font-weight: bold;
+    border-color: var(--color-button-border);
+    font-family: var(--font-button-text), var(--font-button-text-secondary);
+    text-decoration: none;
+    margin-bottom: 8px;
+    border: 2px solid var(--color-button-border);
+  }
 
   .adContainer {
     display: block;
@@ -739,6 +853,13 @@
   }
 
   .submitButton {
+    width: auto; /* Button size adjusts on mobile */
+    height: 35px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  .interstitial1 {
     width: auto; /* Button size adjusts on mobile */
     height: 35px;
     padding-left: 5px;

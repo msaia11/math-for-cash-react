@@ -43,6 +43,15 @@ export const Game = () => {
   const [todayFriendly, setTodayFriendly] = useState('');
 
   //Game Data
+  const [submissionCount, setSubmissionCount] = useState(() => {
+    const savedSubmissionCount = localStorage.getItem("submissionCount");
+    return savedSubmissionCount ? JSON.parse(savedSubmissionCount) : 0;
+  })
+  const [submitClass, setSubmitClass] = useState(styles.submitButton);
+  const [randomAdNum, setRandomAdNum] = useState(() => {
+    const randNum = Math.floor(Math.random() * (20 - 10 + 1) + 10);
+    return randNum;
+  });
   const [total, setTotal] = useState(0);
   const [leaderTotal, setLeaderTotal] = useState(0);
   const [userTotal, setUserTotal] = useState(() => {
@@ -176,6 +185,10 @@ export const Game = () => {
       setEmail(lastSignedInEmail); // Assuming `setEmailInput` is your email state setter
     }
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("submissionCount", JSON.stringify(submissionCount));
+  }, [submissionCount]);
 
   useEffect(() => {
     localStorage.setItem("balance", JSON.stringify(balance));
@@ -545,6 +558,9 @@ export const Game = () => {
   //Refresh
 
   const handleRefresh = async () => {
+
+    inputRef.current.focus();
+
     //Check if new date
     if (!navigator.onLine) {
       setAlertMessage("You are offline. Please check your connection");
@@ -593,8 +609,6 @@ export const Game = () => {
     {
       setUserTotal(0);
     }
-    inputRef.current.focus();
-
   }
 
   const handleRefreshOnCorrect = async (formattedDate, newUserTotal) => {
@@ -697,6 +711,22 @@ export const Game = () => {
       return;
     }
 
+    //Show ad
+    const newCount = submissionCount + 1;
+    setSubmissionCount(newCount);
+
+    if (newCount >= randomAdNum) {
+      setSubmitClass(styles.interstitial);
+      const event = new MouseEvent('click', { bubbles: true });
+      const interstitialLink = document.querySelector('.interstitial');
+      if (interstitialLink) {
+        interstitialLink.dispatchEvent(event);
+      }
+      setSubmitClass(styles.submitButton);
+      setSubmissionCount(0);
+      setRandomAdNum(Math.floor(Math.random() * (20 - 10 + 1) + 10));
+    }
+
     //Auto-focus on input field
     inputRef.current.focus();
 
@@ -743,33 +773,6 @@ export const Game = () => {
         handleIncorrect();
       }
     }
-
-    /* Display the interstitial ad after submiting an answer
-    const adZoneId = '5456004';
-
-    // Create and append the interstitial ad script
-    const adScript = document.createElement('script');
-    adScript.async = true;
-    adScript.type = 'application/javascript';
-    adScript.src = 'https://a.pemsrv.com/ad-provider.js';
-
-    const adContainer = document.createElement('ins');
-    adContainer.className = 'eas6a97888e33';
-    adContainer.setAttribute('data-zoneid', adZoneId);
-
-    document.body.appendChild(adContainer); // Append ad container to body
-    document.body.appendChild(adScript);    // Append ad script to body
-
-    // Load the ad after insertion
-    const adProviderScript = document.createElement('script');
-    adProviderScript.innerHTML = `(AdProvider = window.AdProvider || []).push({"serve": {}});`;
-    document.body.appendChild(adProviderScript);
-
-    // Listen for the interstitial ad display event
-    document.addEventListener(`creativeDisplayed-${adZoneId}`, function (e) {
-      alert("Interstitial ad displayed!");
-      alert(e.detail); // Additional details about the displayed ad
-    }, { once: true }); // Event listener will run once and then remove itself */
   }
 
   const handleCutover = async (formattedDate, dateFriendly, skipUserData) => {
@@ -1191,11 +1194,16 @@ export const Game = () => {
             <p className={styles.topSectionLeftText}>Balance: ${balance}</p>
           </div>
           <div className={styles.topSectionRight}>
-             <button 
-              className={styles.topSectionRightButton}
-              onClick={handleRefresh}>
-                Refresh
-            </button>
+            <a 
+              href="#"
+              className={`${styles.refreshButton} interstitial`} 
+              onClick={(e) => {
+                e.preventDefault(); // Prevents link navigation
+                handleRefresh();
+              }}
+            >
+              Refresh
+            </a>
             <button 
               className={styles.topSectionRightButton}
               onClick={handleClickTransferBalance}>Transfer Balance</button>
@@ -1225,14 +1233,41 @@ export const Game = () => {
                 }
               }}
               />
-            <button 
-              className={styles.submitButton}
-              onClick={handleSubmitAnswer}>Submit</button>
+              <a 
+                href="#"
+                className={submitClass} 
+                onClick={(e) => {
+                  e.preventDefault(); // Prevents link navigation
+                  handleSubmitAnswer();
+                }}
+              >
+                Submit
+              </a>
           </div>
         </div>
       </div>
+      {/* Affiliate ad iframe */}
+      <iframe
+        src="https://www.fiverr.com/gig_widgets?id=U2FsdGVkX1+PBFT2MXgrqHNlHx9ePAcjrCeKM30VVSij2+IQ9QlsaZamZ0TvsdKSKBCWwASPBSo0oke+d5hUAkL6OYELetRcYRVdrqjsMdbPZY+c0/bBZre1yCP48Al1X1YWjrX2fvwdM5E3AIFGpMAv7nmpKN5tyg8OCu5UT1Q61NApURYXYst8HEGXPijxCvar1kkZGtF7gfgO5RVas/CX3HqUm45NOFdXei/RstQrJhUR8FFrfP912YJwnUh8Naf0pBHQxZRyahidHqOR12aubY3O6HRo4urwjtRs+UsDGzxADyyeeno1WfAz9Y5qYoA36Dh0SsanBxaWI0qTSTyJTolzbHEq0hZKYm2qkd5ClKdIN8Ba80wvw2XFfuksPJREU5zGb0dBw16zT+BFTuE5ZipdQxbmI1gLBdmtNz8Jz23mFs6aVMf+N3ss8WRTyPy7A5VqR5tP5qhxlpbWeBNehMRvVwjCNdtq2QN0ezHPCj74BnjK2R7cpRUktHXu7Xu23D8WZXJYzvbJSfRWaaD6fTneP+acGlybzD7Mwv0=&affiliate_id=1055777&strip_google_tagmanager=true"
+        loading="lazy"
+        data-with-title="true"
+        className={styles.affiliateAd}
+        frameBorder="0"
+        height="350"
+        width="100%"
+        referrerPolicy="no-referrer-when-downgrade"
+        data-mode="random_gigs"
+        onLoad={() => {
+          const frame = document.querySelector(`.${styles.affiliateAd}`);
+          const script = document.createElement('script');
+          script.addEventListener('load', function () {
+            window.FW_SDK.register(frame);
+          });
+          script.setAttribute('src', 'https://www.fiverr.com/gig_widgets/sdk');
+          document.body.appendChild(script);
+        }}
+      ></iframe>
       {/* Native Ad Section */}
-      <iframe src="https://www.fiverr.com/gig_widgets?id=U2FsdGVkX1+PBFT2MXgrqHNlHx9ePAcjrCeKM30VVSij2+IQ9QlsaZamZ0TvsdKSKBCWwASPBSo0oke+d5hUAkL6OYELetRcYRVdrqjsMdbPZY+c0/bBZre1yCP48Al1X1YWjrX2fvwdM5E3AIFGpMAv7nmpKN5tyg8OCu5UT1Q61NApURYXYst8HEGXPijxCvar1kkZGtF7gfgO5RVas/CX3HqUm45NOFdXei/RstQrJhUR8FFrfP912YJwnUh8Naf0pBHQxZRyahidHqOR12aubY3O6HRo4urwjtRs+UsDGzxADyyeeno1WfAz9Y5qYoA36Dh0SsanBxaWI0qTSTyJTolzbHEq0hZKYm2qkd5ClKdIN8Ba80wvw2XFfuksPJREU5zGb0dBw16zT+BFTuE5ZipdQxbmI1gLBdmtNz8Jz23mFs6aVMf+N3ss8WRTyPy7A5VqR5tP5qhxlpbWeBNehMRvVwjCNdtq2QN0ezHPCj74BnjK2R7cpRUktHXu7Xu23D8WZXJYzvbJSfRWaaD6fTneP+acGlybzD7Mwv0=&affiliate_id=1055777&strip_google_tagmanager=true" loading="lazy" data-with-title="true" class="fiverr_nga_frame" frameborder="0" height="350" width="100%" referrerpolicy="no-referrer-when-downgrade" data-mode="random_gigs" onload=" var frame = this; var script = document.createElement('script'); script.addEventListener('load', function() { window.FW_SDK.register(frame); }); script.setAttribute('src', 'https://www.fiverr.com/gig_widgets/sdk'); document.body.appendChild(script); " ></iframe>
       <footer className={styles.copyright}>
         <p>&copy; 2024 Brain Bucks</p>
       </footer>
