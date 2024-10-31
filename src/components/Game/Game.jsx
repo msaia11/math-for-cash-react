@@ -96,8 +96,6 @@ export const Game = () => {
   //Refs
   const inputRef = useRef(null);
 
-  const isMobile = window.innerWidth < 768;
-
   //Use Effects
   //ExoClick
   //Native
@@ -591,11 +589,17 @@ export const Game = () => {
       var dateUserData = dateUserDocSnap.data();
       setUserTotal(dateUserData.userTotal);
     }
+    else 
+    {
+      setUserTotal(0);
+    }
     inputRef.current.focus();
 
   }
 
   const handleRefreshOnCorrect = async (formattedDate, newUserTotal) => {
+
+    inputRef.current.focus();
 
     const uid = await getUserId();
     var userDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
@@ -625,8 +629,6 @@ export const Game = () => {
         setTotal(currentTotal + 1);
       }
     })
-
-    inputRef.current.focus();
   }
 
   //Math Functions
@@ -742,7 +744,7 @@ export const Game = () => {
       }
     }
 
-    // Display the interstitial ad after submiting an answer
+    /* Display the interstitial ad after submiting an answer
     const adZoneId = '5456004';
 
     // Create and append the interstitial ad script
@@ -767,7 +769,7 @@ export const Game = () => {
     document.addEventListener(`creativeDisplayed-${adZoneId}`, function (e) {
       alert("Interstitial ad displayed!");
       alert(e.detail); // Additional details about the displayed ad
-    }, { once: true }); // Event listener will run once and then remove itself
+    }, { once: true }); // Event listener will run once and then remove itself */
   }
 
   const handleCutover = async (formattedDate, dateFriendly, skipUserData) => {
@@ -1230,6 +1232,7 @@ export const Game = () => {
         </div>
       </div>
       {/* Native Ad Section */}
+      <iframe src="https://www.fiverr.com/gig_widgets?id=U2FsdGVkX1+PBFT2MXgrqHNlHx9ePAcjrCeKM30VVSij2+IQ9QlsaZamZ0TvsdKSKBCWwASPBSo0oke+d5hUAkL6OYELetRcYRVdrqjsMdbPZY+c0/bBZre1yCP48Al1X1YWjrX2fvwdM5E3AIFGpMAv7nmpKN5tyg8OCu5UT1Q61NApURYXYst8HEGXPijxCvar1kkZGtF7gfgO5RVas/CX3HqUm45NOFdXei/RstQrJhUR8FFrfP912YJwnUh8Naf0pBHQxZRyahidHqOR12aubY3O6HRo4urwjtRs+UsDGzxADyyeeno1WfAz9Y5qYoA36Dh0SsanBxaWI0qTSTyJTolzbHEq0hZKYm2qkd5ClKdIN8Ba80wvw2XFfuksPJREU5zGb0dBw16zT+BFTuE5ZipdQxbmI1gLBdmtNz8Jz23mFs6aVMf+N3ss8WRTyPy7A5VqR5tP5qhxlpbWeBNehMRvVwjCNdtq2QN0ezHPCj74BnjK2R7cpRUktHXu7Xu23D8WZXJYzvbJSfRWaaD6fTneP+acGlybzD7Mwv0=&affiliate_id=1055777&strip_google_tagmanager=true" loading="lazy" data-with-title="true" class="fiverr_nga_frame" frameborder="0" height="350" width="100%" referrerpolicy="no-referrer-when-downgrade" data-mode="random_gigs" onload=" var frame = this; var script = document.createElement('script'); script.addEventListener('load', function() { window.FW_SDK.register(frame); }); script.setAttribute('src', 'https://www.fiverr.com/gig_widgets/sdk'); document.body.appendChild(script); " ></iframe>
       <footer className={styles.copyright}>
         <p>&copy; 2024 Brain Bucks</p>
       </footer>
