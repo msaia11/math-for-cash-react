@@ -6,7 +6,7 @@ import db, { auth } from "../../firebase/firebase";
 import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged} from "firebase/auth";
 import { doc, setDoc, getDoc, collection, addDoc, getDocs } from "firebase/firestore";
 import { format, toZonedTime } from 'date-fns-tz';
-import { generateMathQuestion, generateWordUnscrambleQuestion, getWordToUnscramble, generateMathSequenceQuestion } from "../../helpers/QuestionHelper";
+import { generateMathQuestion, generateWordUnscrambleQuestion, getWordToUnscramble, generateMathSequenceQuestion, translateNumToStr } from "../../helpers/QuestionHelper";
 import { evaluate } from "mathjs";
 import styles from "./Game.module.css";
 
@@ -20,6 +20,7 @@ export const Game = () => {
   const [transferBalanceModalVisible, setTransferBalanceModalVisible] = useState(false);
   const [messageModalVisible, setMessageModalVisible] = useState(false);
   const [alertModalVisible, setAlertModalVisible] = useState(false);
+  //const [verifyHumanModalVisible, setVerifyHumanModalVisible] = useState(false);
 
   //Log in Data
   const [email, setEmail] = useState('');
@@ -88,7 +89,13 @@ export const Game = () => {
     return savedQuestion ? JSON.parse(savedQuestion) : '';
   })
   const [inputAnswer, setInputAnswer] = useState('');
- 
+
+  /*Human Verification
+  const [verifyHumanText, setVerifyHumanText] = useState('');
+  const [verifyHumanAnswer, setVerifyHumanAnswer] = useState(0);
+  const [verifyHumanAttemptsRemaning, setVerifyHumanAttemptsRemaining] = useState(3);
+  const [disabled, setDisabled] = useState(false);
+  const [verifyHumanInput, setVerifyHumanInput] = useState(''); */
 
   //Animations
   const [correctAnimation, setCorrectAnimation] = useState(false);
@@ -253,7 +260,7 @@ export const Game = () => {
           setUserId(user.uid);
 
           // Load user-specific data
-          loadUserData(user.uid);
+          loadUserData(user.uid, formattedDate);
 
           try {
             // Fetch last update and handle cutover if needed
@@ -292,17 +299,16 @@ export const Game = () => {
 
   const loadUserData = async (uid, formattedDate) => {
 
-    // If the user total isn't saved to local storage, get it from the database
-    if (!userTotal) {
-      const userDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
-      const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setUserTotal(data.userTotal);
-      } else {
-        setUserTotal(0);
-      }
+    // Get user total from the database
+    const userDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
+    const docSnap = await getDoc(userDocRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      setUserTotal(data.userTotal);
+    } else {
+      setUserTotal(0);
     }
+    
 
     // Load messages from the database
     if (messageArray.length === 0) {
@@ -353,8 +359,9 @@ export const Game = () => {
       }
     });
   };
-  
+
   //Close Modals
+
   const closeAlertModalVisible = () => {
     setAlertModalVisible(false);
   }
@@ -552,11 +559,11 @@ export const Game = () => {
     setAlertMessage("Thanks for your message!");
     setAlertModalVisible(true);
     setContactUsModalVisible(false);
+    setSubject('');
+    setMessage('');
   }
 
-
   //Refresh
-
   const handleRefresh = async () => {
 
     inputRef.current.focus();
@@ -609,6 +616,8 @@ export const Game = () => {
     {
       setUserTotal(0);
     }
+    //Actually refresh page
+    location.reload();
   }
 
   const handleRefreshOnCorrect = async (formattedDate, newUserTotal) => {
@@ -626,7 +635,7 @@ export const Game = () => {
       if (docSnap.exists()) {
         var data = docSnap.data();
         var currentHighScore = data.highScore;
-        if (newUserTotal >= currentHighScore) {
+        if (newUserTotal > currentHighScore) {
           setDoc(datesDocRef, {
             highScore: newUserTotal,
             user: uid
@@ -644,6 +653,41 @@ export const Game = () => {
       }
     })
   }
+  /*Human Verification
+  const verifyHumanGenerateQuestion = () => {
+    const num1 = Math.floor(Math.random() * 10)
+    const num2 = Math.floor(Math.random() * 10)
+    const num1Str = translateNumToStr(num1);
+    const num2Str = translateNumToStr(num2);
+    setVerifyHumanAnswer(num1+num2);
+
+    var text = "What is " + num1Str + " plus " + num2Str + "?"
+    setVerifyHumanText(text);
+    setVerifyHumanModalVisible(true);
+  }
+
+  const verifyHuman = () => {
+    alert("Excuse me?")
+    if (verifyHumanInput === verifyHumanAnswer) {
+      setAlertMessage("Thank you for verifying");
+      setAlertModalVisible(true);
+      setVerifyHumanModalVisible(false);
+      setVerifyHumanInput('');
+      inputRef.current.focus();
+      return;
+    }
+
+    var attemptsRemaining = verifyHumanAttemptsRemaning - 1;
+    if (verifyHumanAttemptsRemaning <= 0) {
+      setAlertMessage("Incorrect response. Verification failed. Please try again tomorrow");
+      setAlertModalVisible(true);
+      return;
+    }
+    alert("Excuse me 2?")
+    setAlertMessage("Incorrect response. You have " + attemptsRemaining + " attempts remaining.")
+    setAlertModalVisible(true);
+    setVerifyHumanAttemptsRemaining(attemptsRemaining);
+  } */
 
   //Math Functions
   function generateQuestion() {
@@ -698,6 +742,38 @@ export const Game = () => {
   }
 
   //Handle Answer
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const captchaResponse = grecaptcha.getResponse();
+    
+    if (!captchaResponse) {
+      alert("Please complete the reCAPTCHA.");
+      return;
+    }
+
+    const formData = new FormData(e.target);
+    const params = new URLSearchParams(formData);
+
+    try {
+      const res = await fetch('http://localhost:3000/upload', {
+        method: "POST",
+        body: params,
+      });
+      const data = await res.json();
+
+      if (data.captchaSuccess) {
+        alert("Validation Successful");
+        handleSubmitAnswer(); // Calls your custom answer submission logic
+      } else {
+        alert("Validation failed");
+      }
+    } catch (err) {
+      alert("An error occurred: " + err);
+    }
+  };
+
   const handleSubmitAnswer = async () => {
     if (!navigator.onLine) {
       setAlertMessage("You are offline. Please check your connection");
@@ -715,6 +791,8 @@ export const Game = () => {
     const newCount = submissionCount + 1;
     setSubmissionCount(newCount);
 
+    let adDisplayed = false;
+
     if (newCount >= randomAdNum) {
       setSubmitClass(styles.interstitial);
       const event = new MouseEvent('click', { bubbles: true });
@@ -725,6 +803,22 @@ export const Game = () => {
       setSubmitClass(styles.submitButton);
       setSubmissionCount(0);
       setRandomAdNum(Math.floor(Math.random() * (20 - 10 + 1) + 10));
+
+      adDisplayed = true;
+    }
+
+    // Function to check if the ad is closed
+    const checkAdClosed = () => {
+      const adElement = document.querySelector('.interstitial');  // Adjust if the ad uses a different selector
+      if (!adElement) {
+          clearInterval(adCheckInterval);
+          location.reload();
+      }
+    };
+
+  // Poll every second to see if ad has closed
+    if (adDisplayed) {
+      const adCheckInterval = setInterval(checkAdClosed, 1000);
     }
 
     //Auto-focus on input field
@@ -772,6 +866,13 @@ export const Game = () => {
       else {
         handleIncorrect();
       }
+    }
+
+    if (refresh) {
+      // Use a delay to allow the ad to display before refreshing the page
+      setTimeout(() => {
+        location.reload();
+      }, 5000);  // Adjust this delay based on ad display time
     }
   }
 
@@ -832,6 +933,7 @@ export const Game = () => {
 
   const handleCorrect = async (formattedDate) => {
     var newUserTotal = userTotal + 1;
+    
     const uid = await getUserId();
     var dateUserDocRef = doc(db, 'dates/' + formattedDate + '/users', uid);
     const dateUserDocSnap = await getDoc(dateUserDocRef);
@@ -857,6 +959,7 @@ export const Game = () => {
   const handleIncorrect = () => {
     setIncorrectAnimation(true);
     setTimeout(() => setIncorrectAnimation(false), 600);
+    setInputAnswer('');
   }
 
 
@@ -1038,8 +1141,11 @@ export const Game = () => {
       // Auto sign in the user
       await signInWithEmailAndPassword(auth, registerEmail, registerPassword);
       setSignedIn(true);
+      setInfoModalVisible(true);
       setAlertMessage("You have successfully created an account");
       setAlertModalVisible(true);
+
+
   
       // Refresh game stats
       getGameStats(formattedDate);
@@ -1217,21 +1323,23 @@ export const Game = () => {
           <p className={styles.mainSectionText}>Prize Pool for {todayFriendly}: ${payout}</p>
           <p className={styles.mainSectionText}>{questionPrompt}</p>
           <p className={correctAnimation ? styles.tada : incorrectAnimation ? styles.shake : styles.mainSectionText}>{questionString}</p>
-          <div className={styles.inputButtonContainer}>
-            <input
-              ref={inputRef}
-              placeholder="Answer"
-              className={styles.answerInput}
-              type={questionType === 1 ? "text" : "number"} 
-              inputMode={questionType === 1 ? "text" : "number"}
-              pattern="[0-9]*"
-              value={inputAnswer}
-              onChange={(e) => setInputAnswer(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSubmitAnswer();
-                }
-              }}
+          
+            <div className={styles.inputButtonContainer}>
+              <input
+                ref={inputRef}
+                placeholder="Answer"
+                className={styles.answerInput}
+                type={questionType === 1 ? "text" : "number"} 
+                inputMode={questionType === 1 ? "text" : "number"}
+                pattern="[0-9]*"
+                value={inputAnswer}
+                onChange={(e) => setInputAnswer(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSubmitAnswer();
+                  }
+                }}
               />
               <a 
                 href="#"
@@ -1243,7 +1351,7 @@ export const Game = () => {
               >
                 Submit
               </a>
-          </div>
+            </div>
         </div>
       </div>
       {/* Affiliate ad iframe */}
@@ -1325,7 +1433,6 @@ export const Game = () => {
             onClick={() => setSignInModalVisible(false)}>
             Close
           </button>
-
         </div>
       </div>
       )}
@@ -1587,6 +1694,31 @@ export const Game = () => {
       </div>
       )}
 
+      {/*{verifyHumanModalVisible && (
+      <div className={styles.modalBackdrop}>
+        <div 
+          className={styles.alertModal} 
+          onClick={(e) => e.stopPropagation()} 
+        >
+          <p className={styles.modalTitle}>Please answer the following question to prove you are human.</p>
+          <p className={styles.alertMessage}>{verifyHumanText}</p>
+          <input 
+            type="number"
+            inputMode="number"
+            pattern="[0-9]*"
+            value={verifyHumanInput}
+            onChange={(e) => setVerifyHumanInput(e.target.value)}
+            className={styles.input}/>
+          
+          <button 
+            className={styles.submitButton}
+            onClick={verifyHuman}>
+            Submit
+          </button>
+        </div>
+      </div>
+      )} */}
+
       {alertModalVisible && (
       <div className={styles.modalBackdrop}>
         <div 
@@ -1603,9 +1735,6 @@ export const Game = () => {
         </div>
       </div>
       )}
-
-
-      
     </section>
   )
 }
